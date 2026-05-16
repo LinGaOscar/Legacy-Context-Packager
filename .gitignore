@@ -1,0 +1,7 @@
+node_modules/
+dist/
+lcp-output/
+*.js.map
+*.d.ts
+.DS_Store
+/tmp/
