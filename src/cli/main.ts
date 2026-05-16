@@ -154,7 +154,18 @@ program
   .action((oldDir: string, newDir: string, options: { output: string }) => {
     console.log(`\n[LCP] 比較：${oldDir} → ${newDir}`);
 
-    const diff = diffScans(path.resolve(oldDir), path.resolve(newDir));
+    const resolvedOld = path.resolve(oldDir);
+    const resolvedNew = path.resolve(newDir);
+    if (!fs.existsSync(path.join(resolvedOld, 'routes.json'))) {
+      console.error(`[LCP] 錯誤：${oldDir} 不包含 routes.json，請確認路徑為有效的 lcp scan 輸出目錄`);
+      process.exit(1);
+    }
+    if (!fs.existsSync(path.join(resolvedNew, 'routes.json'))) {
+      console.error(`[LCP] 錯誤：${newDir} 不包含 routes.json，請確認路徑為有效的 lcp scan 輸出目錄`);
+      process.exit(1);
+    }
+
+    const diff = diffScans(resolvedOld, resolvedNew);
     const md = formatDiffMarkdown(diff);
     const outPath = path.resolve(options.output);
 
@@ -163,7 +174,7 @@ program
     console.log(`  Routes added:    ${diff.routes.added.length}`);
     console.log(`  Routes removed:  ${diff.routes.removed.length}`);
     console.log(`  Secrets new:     ${diff.secrets.newFound.length}`);
-    console.log(`  Secrets resolved:${diff.secrets.resolved.length}`);
+    console.log(`  Secrets resolved: ${diff.secrets.resolved.length}`);
     console.log(`  Report:          ${outPath}`);
   });
 

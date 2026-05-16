@@ -26,7 +26,7 @@ function routeKey(r: Route): string {
 }
 
 function secretKey(s: Secret): string {
-  return `${s.ruleId}:${path.basename(s.filePath)}:${s.lineNumber}`;
+  return `${s.ruleId}:${s.filePath}:${s.lineNumber}`;
 }
 
 function loadJson<T>(dir: string, filename: string): T[] {

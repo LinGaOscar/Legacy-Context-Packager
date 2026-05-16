@@ -325,8 +325,17 @@ const JS = `
   wireFilters('s-sev-filters', function(v){ sState.sev = v; renderSecrets(); });
 
   // ── Web Entries ───────────────────────────
+  var eState = { search: '' };
+
+  function filteredEntries() {
+    var q = (eState.search||'').toLowerCase();
+    return q ? R.webEntries.filter(function(e){
+      return (e.targetPath+' '+e.sourceFile).toLowerCase().indexOf(q) >= 0;
+    }) : R.webEntries;
+  }
+
   function renderEntries() {
-    var rows = R.webEntries;
+    var rows = filteredEntries();
     var tb = document.getElementById('e-body');
     if (!rows.length) { tb.innerHTML = '<tr class="empty-row"><td colspan="4">No web entries found.</td></tr>'; return; }
     tb.innerHTML = rows.map(function(e) {
@@ -340,20 +349,12 @@ const JS = `
   }
 
   document.getElementById('e-search').addEventListener('input', function(ev) {
-    var q = ev.target.value.toLowerCase();
-    var tb = document.getElementById('e-body');
-    var rows = q ? R.webEntries.filter(function(e){
-      return (e.targetPath+' '+e.sourceFile).toLowerCase().indexOf(q) >= 0;
-    }) : R.webEntries;
-    tb.innerHTML = rows.length ? rows.map(function(e){
-      return '<tr><td>'+h(e.entryType)+'</td><td><code>'+h(bname(e.sourceFile))+'</code>:'+h(e.lineNumber)+'</td><td><code>'+h(e.targetPath)+'</code></td><td>'+h(e.invokeType)+'</td></tr>';
-    }).join('') : '<tr class="empty-row"><td colspan="4">No entries match.</td></tr>';
+    eState.search = ev.target.value; renderEntries();
   });
 
   // ── Dependencies ──────────────────────────
   function renderDeps() {
     var dm = R.dependencyMap;
-    var p = R.projectInfo;
     var html = '<div class="stat-grid">' +
       '<div class="stat-card"><div class="stat-val">'+dm.configFiles.length+'</div><div class="stat-lbl">Config Files</div></div>' +
       '<div class="stat-card"><div class="stat-val">'+dm.edges.length+'</div><div class="stat-lbl">Dep Edges</div></div>' +
