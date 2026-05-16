@@ -56,23 +56,25 @@ export function scanJavaRoutes(rootDir: string): Route[] {
     const lines = content.split('\n');
     let currentClass = '';
     let classLevelPath = '';
+    let pendingClassPath = ''; // annotation 先記住，等到 class 宣告行再賦值
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
-      // 抽取 class 名稱
+      // 抽取 class 名稱：同時把 pending annotation path 賦給此 class
       const classMatch = line.match(/(?:public|protected|private)?\s+class\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[1];
-        classLevelPath = ''; // 新 class 重置
+        classLevelPath = pendingClassPath; // 接收前面 annotation 設定的 path
+        pendingClassPath = '';
       }
 
-      // 偵測 class 層級的 @RequestMapping / @Path
+      // 偵測 class 層級的 @RequestMapping / @Path，暫存到 pendingClassPath
       const classMappingMatch = line.match(/@(?:RequestMapping|Path)\s*\(\s*["']([^"']+)["']/);
-      if (classMappingMatch && i + 1 < lines.length) {
+      if (classMappingMatch) {
         const nextLine = lines[i + 1]?.trim() ?? '';
-        if (nextLine.includes('class ') || nextLine.includes('public class')) {
-          classLevelPath = classMappingMatch[1];
+        if (nextLine.includes('class ')) {
+          pendingClassPath = classMappingMatch[1];
           continue;
         }
       }
@@ -87,12 +89,13 @@ export function scanJavaRoutes(rootDir: string): Route[] {
           httpMethod = extractRequestMappingMethod(annotationFull);
         }
 
-        const rawPath = extractPath(annotationFull);
-        if (!rawPath) continue;
+        // 支援無括號的 annotation（如 @PostMapping），視為空路徑，繼承 class 前綴
+        const rawPath = extractPath(annotationFull) ?? '';
 
-        const fullPath = classLevelPath
-          ? '/' + [classLevelPath, rawPath].join('/').replace(/\/+/g, '/').replace(/^\/\//, '/')
-          : rawPath;
+        const segments = [classLevelPath, rawPath]
+          .filter(s => s !== '')
+          .map(s => s.replace(/^\/+/, '')); // 去除各段開頭斜線，統一由外層加
+        const fullPath = '/' + segments.join('/');
 
         // 下一個非空行通常是 method 定義
         let methodName: string | undefined;

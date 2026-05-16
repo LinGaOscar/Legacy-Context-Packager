@@ -17,6 +17,11 @@ function shouldSkipFile(filePath: string): boolean {
     SKIP_EXTENSIONS.has(base.replace(/.*(\.\w+\.\w+)$/, '$1'));
 }
 
+// 值本身含 regex metachar 代表這是 pattern 定義，而非真實 secret
+function looksLikeRegexPattern(value: string): boolean {
+  return /[|\\()\[\]?*+{}]/.test(value);
+}
+
 function isAllowlisted(value: string): boolean {
   const lower = value.toLowerCase();
   return ALLOWLIST_VALUES.has(value) ||
@@ -51,7 +56,7 @@ export function scanSecrets(rootDir: string): Secret[] {
         while ((match = regex.exec(line)) !== null) {
           // 優先取 capture group 1（實際 secret 值），否則用整個 match
           const rawValue = match[1] ?? match[0];
-          if (isAllowlisted(rawValue)) continue;
+          if (isAllowlisted(rawValue) || looksLikeRegexPattern(rawValue)) continue;
 
           const entropy = shannonEntropy(rawValue);
           const confidence = calcSecretConfidence({
