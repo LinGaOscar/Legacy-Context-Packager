@@ -62,20 +62,27 @@ export function scanPhpRoutes(rootDir: string): Route[] {
     }
 
     const lines = content.split('\n');
-    let groupPrefix = ''; // Route::group(['prefix' => '/api'], ...) 的前綴
+    // 用 stack 追蹤巢狀 group 的 prefix，每個 group 開 { 推入，} 彈出
+    const prefixStack: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // 偵測 Route::prefix() 或 Route::group(['prefix' => ...])
-      const prefixMatch = line.match(/(?:prefix|['"]prefix['"]\s*=>\s*)["']([^"']+)["']/);
-      if (prefixMatch) groupPrefix = prefixMatch[1];
+      // 偵測 Route::group(['prefix' => '/api'], function() {
+      const prefixMatch = line.match(/Route::group\s*\(\s*\[(?:[^\]]*['"]prefix['"]\s*=>\s*['"]([^'"]+)['"])/);
+      if (prefixMatch) prefixStack.push(prefixMatch[1]);
+
+      // 偵測 group 結束（}); 或 });）
+      if (/^\s*\}\s*\)\s*;/.test(line) && prefixStack.length > 0) {
+        prefixStack.pop();
+      }
 
       const route = parseLaravelRouteLine(line, i + 1, filePath);
       if (!route) continue;
 
-      if (groupPrefix) {
-        route.path = '/' + [groupPrefix, route.path].join('/').replace(/\/+/g, '/');
+      if (prefixStack.length > 0) {
+        const prefix = prefixStack.join('/').replace(/\/+/g, '/');
+        route.path = '/' + [prefix, route.path].join('/').replace(/\/+/g, '/');
       }
 
       routes.push(route);

@@ -35,23 +35,25 @@ export function scanCSharpRoutes(rootDir: string): Route[] {
     const lines = content.split('\n');
     let currentClass = '';
     let classLevelRoute = '';
+    let pendingClassRoute = '';
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
-      // 抓 class 名稱
+      // 抓 class 名稱：接收前面 [Route(...)] 設定的 pending path
       const classMatch = line.match(/(?:public|internal|protected|private)?\s+class\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[1];
-        classLevelRoute = '';
+        classLevelRoute = pendingClassRoute;
+        pendingClassRoute = '';
       }
 
-      // class 層級 [Route("api/[controller]")]
+      // class 層級 [Route("api/[controller]")]，暫存到 pending
       const classRouteMatch = line.match(/\[Route\s*\(\s*["']([^"']+)["']/);
       if (classRouteMatch) {
         const nextLines = lines.slice(i + 1, i + 5).map(l => l.trim()).join(' ');
         if (nextLines.includes('class ')) {
-          classLevelRoute = classRouteMatch[1];
+          pendingClassRoute = classRouteMatch[1];
           continue;
         }
       }

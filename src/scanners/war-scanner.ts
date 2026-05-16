@@ -44,12 +44,6 @@ export function scanWarFile(warPath: string): { routes: Route[]; tempDir: string
 
   const routes: Route[] = [];
 
-  // 掃描解壓後的 Java class（近似推斷，精度低）
-  const classesDir = path.join(tempDir, 'WEB-INF', 'classes');
-  if (fs.existsSync(classesDir)) {
-    // class 檔無法直接做文字 regex，WAR scan 主要依賴 web.xml
-  }
-
   // 解析 web.xml servlet mapping
   const webXmlPath = path.join(tempDir, 'WEB-INF', 'web.xml');
   if (fs.existsSync(webXmlPath)) {

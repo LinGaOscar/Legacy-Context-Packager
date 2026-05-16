@@ -30,6 +30,12 @@ function isAllowlisted(value: string): boolean {
     /^[*x]+$/i.test(value); // 全部是 * 或 x 的佔位符
 }
 
+// 預先編譯所有 rule 的 regex（加 g flag），避免每行重複建立物件
+const COMPILED_RULES = SECRET_RULES.map(rule => ({
+  rule,
+  regex: new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g'),
+}));
+
 export function scanSecrets(rootDir: string): Secret[] {
   const files = collectFiles(rootDir, { extensions: SCANNABLE_EXTENSIONS });
   const secrets: Secret[] = [];
@@ -49,8 +55,10 @@ export function scanSecrets(rootDir: string): Secret[] {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      for (const rule of SECRET_RULES) {
-        const regex = new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g');
+      for (const { rule, regex: compiledRegex } of COMPILED_RULES) {
+        // 重置 lastIndex，確保每行從頭比對
+        compiledRegex.lastIndex = 0;
+        const regex = compiledRegex;
         let match: RegExpExecArray | null;
 
         while ((match = regex.exec(line)) !== null) {

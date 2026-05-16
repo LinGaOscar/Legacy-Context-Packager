@@ -63,8 +63,6 @@ export function scanWebEntries(rootDir: string): WebEntry[] {
       continue;
     }
 
-    const lines = content.split('\n');
-
     for (const pattern of ENTRY_PATTERNS) {
       const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
       let match: RegExpExecArray | null;

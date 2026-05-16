@@ -73,10 +73,11 @@ program
       const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
       const redactedSecrets = redactSecrets(normalized.secrets);
 
-      // 統計檔案數
-      const totalFiles = collectFiles(scanRoot, {
+      // 統計可分析的檔案數（作為 totalFiles）
+      const scannableFiles = collectFiles(scanRoot, {
         extensions: ['.java', '.cs', '.php', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],
-      }).length;
+      });
+      const totalFiles = scannableFiles.length;
 
       const scanDurationMs = Date.now() - startTime;
 
@@ -86,7 +87,7 @@ program
           language: project.language,
           framework: project.framework,
           totalFiles,
-          scannedFiles: totalFiles,
+          scannedFiles: scannableFiles.filter(f => !f.endsWith('.min.js')).length,
           scanDurationMs,
         },
         routes: normalized.routes,
@@ -96,7 +97,11 @@ program
         openApiLite: buildOpenApiLite(normalized.routes),
       };
 
-      const formats = options.format.split(',').map(f => f.trim()) as ('json' | 'markdown')[];
+      const VALID_FORMATS = new Set(['json', 'markdown']);
+      const formats = options.format.split(',').map(f => f.trim()).filter(f => {
+        if (!VALID_FORMATS.has(f)) { console.warn(`[LCP] 警告：不支援的輸出格式 "${f}"，已跳過`); return false; }
+        return true;
+      }) as ('json' | 'markdown')[];
       buildOutput(result, { outputDir: path.resolve(options.output), formats });
 
       console.log(`\n[LCP] 掃描完成 (${scanDurationMs}ms)`);

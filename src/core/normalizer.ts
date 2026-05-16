@@ -12,7 +12,8 @@ export interface RawScanResults {
 function dedupeRoutes(routes: Route[]): Route[] {
   const seen = new Set<string>();
   return routes.filter(r => {
-    const key = `${r.httpMethod}:${r.path}:${r.sourceFile}`;
+    // 加入 lineNumber 避免相同路徑的合法 overload 被誤刪
+    const key = `${r.httpMethod}:${r.path}:${r.sourceFile}:${r.lineNumber ?? 0}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
