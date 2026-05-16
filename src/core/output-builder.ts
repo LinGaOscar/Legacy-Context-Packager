@@ -2,11 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
 import { generateContextPack } from './context-pack-generator.js';
+import { buildReportHtml } from './report-builder.js';
 
 export interface OutputOptions {
   outputDir: string;
   formats: ('json' | 'markdown')[];
-  packs?: ContextPackType[]; // 要輸出的 context pack 類型，空陣列代表不輸出 pack
+  packs?: ContextPackType[];
+  report?: boolean; // 是否產出 report.html（預設 true）
 }
 
 export function buildOutput(result: ProjectScanResult, opts: OutputOptions): void {
@@ -27,6 +29,12 @@ export function buildOutput(result: ProjectScanResult, opts: OutputOptions): voi
   if (opts.formats.includes('markdown')) {
     const md = buildMarkdown(result);
     fs.writeFileSync(path.join(opts.outputDir, 'context-pack.md'), md, 'utf8');
+  }
+
+  // 產出互動式 HTML 報告（預設開啟）
+  if (opts.report !== false) {
+    const html = buildReportHtml(result);
+    fs.writeFileSync(path.join(opts.outputDir, 'report.html'), html, 'utf8');
   }
 
   // 輸出各目的 context pack

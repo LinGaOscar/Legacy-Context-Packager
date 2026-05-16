@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import path from 'path';
+import fs from 'fs';
 import { loadProject } from '../core/project-loader.js';
 import { scanJavaRoutes } from '../scanners/java-route-scanner.js';
 import { scanCSharpRoutes } from '../scanners/csharp-route-scanner.js';
@@ -16,6 +17,7 @@ import { buildOutput } from '../core/output-builder.js';
 import { collectFiles } from '../core/file-collector.js';
 import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
 import type { Route } from '../models/route.js';
+import { diffScans, formatDiffMarkdown } from '../core/diff-engine.js';
 
 const VALID_FORMATS = new Set(['json', 'markdown']);
 const ALL_PACK_TYPES: ContextPackType[] = [
@@ -27,7 +29,7 @@ const program = new Command();
 program
   .name('lcp')
   .description('Legacy Context Packager — 企業遺留系統 LLM 前處理器')
-  .version('0.2.0');
+  .version('0.3.0');
 
 program
   .command('scan <projectPath>')
@@ -36,11 +38,13 @@ program
   .option('--format <formats>', '輸出格式（json,markdown）', 'json,markdown')
   .option('--pack <types>', `輸出的 context pack 類型，逗號分隔或 "all"。\n  可選：${ALL_PACK_TYPES.join(', ')}`)
   .option('--no-secrets', '跳過 secret 掃描（加快速度）')
+  .option('--no-report', '不產出 report.html')
   .action(async (projectPath: string, options: {
     output: string;
     format: string;
     pack?: string;
     secrets: boolean;
+    report: boolean;
   }) => {
     const startTime = Date.now();
     console.log(`\n[LCP] 開始掃描：${path.resolve(projectPath)}`);
@@ -123,7 +127,7 @@ program
         }
       }
 
-      buildOutput(result, { outputDir: path.resolve(options.output), formats, packs });
+      buildOutput(result, { outputDir: path.resolve(options.output), formats, packs, report: options.report });
 
       console.log(`\n[LCP] 掃描完成 (${scanDurationMs}ms)`);
       console.log(`  Routes:      ${result.routes.length}`);
@@ -133,10 +137,34 @@ program
       if (packs.length > 0) {
         console.log(`  Packs:       ${packs.join(', ')}`);
       }
+      if (options.report !== false) {
+        console.log(`  Report:      ${path.resolve(options.output)}/report.html`);
+      }
       console.log(`  Output:      ${path.resolve(options.output)}`);
     } finally {
       if (tempDir) cleanupWarTemp(tempDir);
     }
+  });
+
+// ── lcp diff ──────────────────────────────────────────────────────────────────
+program
+  .command('diff <oldDir> <newDir>')
+  .description('比較兩次掃描結果的 route / secret 差異')
+  .option('-o, --output <file>', '輸出 diff 報告路徑', './lcp-diff.md')
+  .action((oldDir: string, newDir: string, options: { output: string }) => {
+    console.log(`\n[LCP] 比較：${oldDir} → ${newDir}`);
+
+    const diff = diffScans(path.resolve(oldDir), path.resolve(newDir));
+    const md = formatDiffMarkdown(diff);
+    const outPath = path.resolve(options.output);
+
+    fs.writeFileSync(outPath, md, 'utf8');
+
+    console.log(`  Routes added:    ${diff.routes.added.length}`);
+    console.log(`  Routes removed:  ${diff.routes.removed.length}`);
+    console.log(`  Secrets new:     ${diff.secrets.newFound.length}`);
+    console.log(`  Secrets resolved:${diff.secrets.resolved.length}`);
+    console.log(`  Report:          ${outPath}`);
   });
 
 program.parse();
