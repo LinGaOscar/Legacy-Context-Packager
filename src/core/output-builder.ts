@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import type { ProjectScanResult } from '../models/context-pack.js';
+import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
+import { generateContextPack } from './context-pack-generator.js';
 
 export interface OutputOptions {
   outputDir: string;
   formats: ('json' | 'markdown')[];
+  packs?: ContextPackType[]; // 要輸出的 context pack 類型，空陣列代表不輸出 pack
 }
 
 export function buildOutput(result: ProjectScanResult, opts: OutputOptions): void {
@@ -25,6 +27,16 @@ export function buildOutput(result: ProjectScanResult, opts: OutputOptions): voi
   if (opts.formats.includes('markdown')) {
     const md = buildMarkdown(result);
     fs.writeFileSync(path.join(opts.outputDir, 'context-pack.md'), md, 'utf8');
+  }
+
+  // 輸出各目的 context pack
+  if (opts.packs && opts.packs.length > 0) {
+    const packsDir = path.join(opts.outputDir, 'packs');
+    fs.mkdirSync(packsDir, { recursive: true });
+    for (const packType of opts.packs) {
+      const content = generateContextPack(result, packType);
+      fs.writeFileSync(path.join(packsDir, `${packType}.md`), content, 'utf8');
+    }
   }
 }
 

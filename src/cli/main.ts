@@ -14,24 +14,32 @@ import { redactSecrets } from '../core/redactor.js';
 import { buildDependencyMap, buildOpenApiLite } from '../core/condenser.js';
 import { buildOutput } from '../core/output-builder.js';
 import { collectFiles } from '../core/file-collector.js';
-import type { ProjectScanResult } from '../models/context-pack.js';
+import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
+import type { Route } from '../models/route.js';
+
+const VALID_FORMATS = new Set(['json', 'markdown']);
+const ALL_PACK_TYPES: ContextPackType[] = [
+  'api-analysis', 'security-review', 'secret-exposure', 'legacy-onboarding', 'endpoint-test',
+];
 
 const program = new Command();
 
 program
   .name('lcp')
   .description('Legacy Context Packager — 企業遺留系統 LLM 前處理器')
-  .version('0.1.0');
+  .version('0.2.0');
 
 program
   .command('scan <projectPath>')
   .description('掃描專案並輸出 context pack')
   .option('-o, --output <dir>', '輸出目錄', './lcp-output')
   .option('--format <formats>', '輸出格式（json,markdown）', 'json,markdown')
+  .option('--pack <types>', `輸出的 context pack 類型，逗號分隔或 "all"。\n  可選：${ALL_PACK_TYPES.join(', ')}`)
   .option('--no-secrets', '跳過 secret 掃描（加快速度）')
   .action(async (projectPath: string, options: {
     output: string;
     format: string;
+    pack?: string;
     secrets: boolean;
   }) => {
     const startTime = Date.now();
@@ -43,7 +51,7 @@ program
       const project = loadProject(projectPath);
       console.log(`[LCP] 語言：${project.language}  框架：${project.framework}`);
 
-      let routes: ReturnType<typeof scanJavaRoutes> = [];
+      let routes: Route[] = [];
 
       if (project.isWar) {
         console.log('[LCP] 偵測到 WAR 檔，解壓中...');
@@ -51,7 +59,6 @@ program
         routes = warResult.routes;
         tempDir = warResult.tempDir;
       } else {
-        // 依語言平行執行 route scanner
         const scanRootDir = project.rootDir;
         if (project.language === 'java' || project.language === 'unknown') {
           routes.push(...scanJavaRoutes(scanRootDir));
@@ -67,17 +74,14 @@ program
       const scanRoot = tempDir ?? project.rootDir;
       const webEntries = scanWebEntries(scanRoot);
       const rawSecrets = options.secrets ? scanSecrets(scanRoot) : [];
-      const depMap = scanDependencies(scanRoot);
+      const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
-      // Normalize → Redact
       const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
       const redactedSecrets = redactSecrets(normalized.secrets);
 
-      // 統計可分析的檔案數（作為 totalFiles）
       const scannableFiles = collectFiles(scanRoot, {
         extensions: ['.java', '.cs', '.php', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],
       });
-      const totalFiles = scannableFiles.length;
 
       const scanDurationMs = Date.now() - startTime;
 
@@ -86,28 +90,49 @@ program
           rootPath: project.rootDir,
           language: project.language,
           framework: project.framework,
-          totalFiles,
+          totalFiles: scannableFiles.length,
           scannedFiles: scannableFiles.filter(f => !f.endsWith('.min.js')).length,
           scanDurationMs,
         },
         routes: normalized.routes,
         webEntries: normalized.webEntries,
         secrets: redactedSecrets,
-        dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, depMap),
+        dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, rawDepMap),
         openApiLite: buildOpenApiLite(normalized.routes),
       };
 
-      const VALID_FORMATS = new Set(['json', 'markdown']);
+      // 解析 format
       const formats = options.format.split(',').map(f => f.trim()).filter(f => {
-        if (!VALID_FORMATS.has(f)) { console.warn(`[LCP] 警告：不支援的輸出格式 "${f}"，已跳過`); return false; }
+        if (!VALID_FORMATS.has(f)) { console.warn(`[LCP] 警告：不支援的格式 "${f}"，已跳過`); return false; }
         return true;
       }) as ('json' | 'markdown')[];
-      buildOutput(result, { outputDir: path.resolve(options.output), formats });
+
+      // 解析 pack 類型
+      let packs: ContextPackType[] = [];
+      if (options.pack) {
+        if (options.pack === 'all') {
+          packs = ALL_PACK_TYPES;
+        } else {
+          packs = options.pack.split(',').map(p => p.trim()).filter(p => {
+            if (!ALL_PACK_TYPES.includes(p as ContextPackType)) {
+              console.warn(`[LCP] 警告：不支援的 pack 類型 "${p}"，已跳過`);
+              return false;
+            }
+            return true;
+          }) as ContextPackType[];
+        }
+      }
+
+      buildOutput(result, { outputDir: path.resolve(options.output), formats, packs });
 
       console.log(`\n[LCP] 掃描完成 (${scanDurationMs}ms)`);
       console.log(`  Routes:      ${result.routes.length}`);
       console.log(`  Web Entries: ${result.webEntries.length}`);
       console.log(`  Secrets:     ${result.secrets.length} (critical: ${result.secrets.filter(s => s.severity === 'critical').length})`);
+      console.log(`  Config files: ${result.dependencyMap.configFiles.length}`);
+      if (packs.length > 0) {
+        console.log(`  Packs:       ${packs.join(', ')}`);
+      }
       console.log(`  Output:      ${path.resolve(options.output)}`);
     } finally {
       if (tempDir) cleanupWarTemp(tempDir);
