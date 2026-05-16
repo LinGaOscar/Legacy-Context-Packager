@@ -256,31 +256,6 @@ ProjectScanResult
 - 送給 LLM 做 code review / onboarding 前，先輸出 context pack。
 - 先掃 secret，避免敏感資訊外流。[cite:159][cite:171]
 
-## MVP 開發階段
-
-### Phase 1：核心掃描
-
-- 專案類型判斷。
-- Java / C# / PHP route 掃描。
-- WAR 解壓與基礎掃描。
-- Web entry 掃描。
-- Secret scanner 基礎版。
-- JSON 匯出。
-
-### Phase 2：濃縮與打包
-
-- dependency summary。
-- openapi-lite generator。
-- context pack generator。
-- 遮罩與信心分數。
-
-### Phase 3：介面強化
-
-- route / entry / secret 分頁檢視。
-- 搜尋與篩選。
-- 匯出 Markdown 報告。
-- 差異比較（不同版本專案的 route / secret 差異）。
-
 ## 差異化特色
 
 本專案的差異化，不是單純做 route scanner，而是把 **靜態逆向 + secret redaction + token saving** 合在一起。[cite:175][cite:159]

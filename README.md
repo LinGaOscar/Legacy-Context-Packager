@@ -30,6 +30,9 @@ npm run build
 # 跳過 secret 掃描（加快速度）
 ./lcp scan ./my-project --no-secrets
 
+# 不產出 report.html
+./lcp scan ./my-project --no-report
+
 # 輸出指定 context pack 類型
 ./lcp scan ./my-project --pack legacy-onboarding
 
@@ -39,6 +42,18 @@ npm run build
 # 組合多種 pack
 ./lcp scan ./my-project --pack security-review,api-analysis
 ```
+
+### 比較兩次掃描差異
+
+```bash
+# 比較舊版與新版掃描結果，輸出 Markdown 差異報告
+./lcp diff ./old-output ./new-output
+
+# 指定輸出路徑
+./lcp diff ./old-output ./new-output --output ./changes.md
+```
+
+差異報告會列出新增／移除的 routes，以及新偵測到或已消失的 secrets。
 
 ## 輸出檔案
 
@@ -53,6 +68,7 @@ npm run build
 | `openapi-lite.json` | 靜態推導的 OpenAPI 雛形（近似值，非完整 spec） |
 | `context-pack.json` | 掃描摘要 + 統計數字 |
 | `context-pack.md` | Markdown 格式的完整摘要報告 |
+| `report.html` | 互動式 HTML 報告，含搜尋篩選、分頁瀏覽、Markdown 匯出（瀏覽器直接開啟） |
 
 ### Context Pack 類型（`lcp-output/packs/`）
 
@@ -105,8 +121,15 @@ Options:
                          可選：api-analysis, security-review, secret-exposure,
                                legacy-onboarding, endpoint-test
   --no-secrets           跳過 secret 掃描
+  --no-report            不產出 report.html
   -h, --help             顯示說明
   -V, --version          顯示版本
+
+lcp diff <oldDir> <newDir> [options]
+
+Options:
+  -o, --output <file>    差異報告輸出路徑（預設：./lcp-diff.md）
+  -h, --help             顯示說明
 ```
 
 ## 重要限制
@@ -122,4 +145,4 @@ Options:
 |-------|------|------|
 | Phase 1 | ✅ 完成 | 專案類型判斷、Java/C#/PHP route 掃描、WAR 解壓、web entry、secret scanner、JSON 匯出 |
 | Phase 2 | ✅ 完成 | Import 依賴分析、openapi-lite 強化、5 種 context pack generator |
-| Phase 3 | 規劃中 | 分頁 HTML UI、搜尋篩選、Markdown 報告、版本差異比較 |
+| Phase 3 | ✅ 完成 | 互動式 HTML 報告、搜尋篩選、Markdown 匯出、`lcp diff` 版本差異比較 |
