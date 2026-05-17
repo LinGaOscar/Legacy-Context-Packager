@@ -2,20 +2,45 @@
 
 企業遺留系統的 LLM 前處理器。在將 Java、WAR、C#、PHP 專案交給 LLM 分析前，先離線抽取路由、頁面入口、敏感資訊與模組關聯，輸出高密度、低風險的 context pack。
 
-## 安裝
+## 環境需求
 
-**需求：Node.js 18+**
+| 環境 | 需求 |
+|------|------|
+| macOS / Linux | Node.js 18+ |
+| Windows | Node.js 18+、Windows Terminal 或 PowerShell（TUI 功能需要 ANSI 支援，不相容舊版 cmd.exe） |
+
+## 部署
+
+### macOS / Linux
 
 ```bash
 git clone https://github.com/LinGaOscar/Legacy-Context-Packager.git
 cd Legacy-Context-Packager
 npm install
 npm run build
+chmod +x lcp
 ```
+
+### 閉源 / 無網路環境（Windows）
+
+於有網路的機器完成打包後，將整包移入目標機：
+
+```bash
+# 於有網路的機器執行
+npm install && npm run build
+tar --exclude='node_modules/.cache' \
+    -czf lcp-bundle.tar.gz \
+    dist/ node_modules/ package.json lcp.bat
+```
+
+目標機：
+1. 確認 Node.js 18+ 已安裝（可提前下載 `.msi` 一併帶入）
+2. 解壓 `lcp-bundle.tar.gz`
+3. 直接執行 `lcp.bat`
 
 ## 使用方式
 
-專案根目錄提供 `./lcp` 執行檔，可直接呼叫：
+專案根目錄提供 `./lcp`（macOS/Linux）與 `lcp.bat`（Windows）執行檔，可直接呼叫：
 
 ```bash
 # 掃描資料夾（預設輸出至 ./lcp-output）
@@ -41,6 +66,16 @@ npm run build
 
 # 組合多種 pack
 ./lcp scan ./my-project --pack security-review,api-analysis
+```
+
+### 互動式 TUI 瀏覽（需終端機環境）
+
+```bash
+# 掃描後以互動式介面瀏覽結果（方向鍵導航，q 離開）
+./lcp ui ./my-java-project
+
+# Windows
+lcp.bat ui C:\path\to\project
 ```
 
 ### 比較兩次掃描差異
