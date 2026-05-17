@@ -31,7 +31,7 @@ export function DetailOverlay({ item }: Props) {
   const bname = (p: string) => p.split('/').pop() ?? p;
 
   return (
-    <Box borderStyle="round" borderColor="blueBright" flexDirection="column" padding={1} marginTop={1}>
+    <Box borderStyle="round" borderColor="blueBright" flexDirection="column" padding={1} marginTop={1} gap={1}>
       {isRoute(item) && (
         <>
           <Text bold color="blueBright"> Route Detail</Text>
@@ -70,6 +70,7 @@ export function DetailOverlay({ item }: Props) {
           </Box>
         </>
       )}
+      <Text color="gray" dimColor>Esc 返回列表</Text>
     </Box>
   );
 }

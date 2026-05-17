@@ -89,16 +89,16 @@ program
 
 // ── lcp ui ────────────────────────────────────────────────────────────────────
 program
-  .command('ui <projectPath>')
-  .description('掃描並以互動式 TUI 瀏覽結果')
+  .command('ui [projectPath]')
+  .description('以互動式 TUI 掃描並瀏覽結果（不帶路徑則進入 TUI 後輸入）')
   .option('--no-secrets', '跳過 secret 掃描')
-  .action((projectPath: string, options: { secrets: boolean }) => {
+  .action((projectPath: string | undefined, options: { secrets: boolean }) => {
     if (!process.stdin.isTTY) {
       console.error('[LCP] ui 命令需要在互動式終端機中執行（不支援管線或非 TTY 環境）');
       process.exit(1);
     }
     render(React.createElement(App, {
-      projectPath: path.resolve(projectPath),
+      projectPath: projectPath ? path.resolve(projectPath) : undefined,
       secrets: options.secrets,
     }));
   });

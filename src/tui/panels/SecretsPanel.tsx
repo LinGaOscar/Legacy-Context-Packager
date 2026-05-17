@@ -24,6 +24,9 @@ export function SecretsPanel({ secrets, active }: Props) {
 
   return (
     <Box flexDirection="column" flexGrow={1}>
+      <Box paddingBottom={1}>
+        <Text color="gray" dimColor>靜態掃描原始碼中疑似硬編碼的敏感資訊（API Key、密碼、Token 等），明文已遮罩。結果僅供參考，請人工複審 confidence 欄位。</Text>
+      </Box>
       <ScrollTable columns={COLS} rows={secrets} selectedIdx={table.selectedIdx} offset={table.offset} />
       {table.detailOpen && table.selected && (
         <DetailOverlay item={table.selected} />

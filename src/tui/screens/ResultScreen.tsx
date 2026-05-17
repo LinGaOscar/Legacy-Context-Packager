@@ -47,7 +47,7 @@ export function ResultScreen({ result }: Props) {
         {activeTab === 'Routes'       && <RoutesPanel  routes={result.routes}         active={true} onExport={() => {}} />}
         {activeTab === 'Secrets'      && <SecretsPanel secrets={result.secrets}        active={true} />}
         {activeTab === 'Entries'      && <EntriesPanel entries={result.webEntries}     active={true} />}
-        {activeTab === 'Dependencies' && <DepsPanel    depMap={result.dependencyMap} />}
+        {activeTab === 'Dependencies' && <DepsPanel    depMap={result.dependencyMap} active={true} />}
       </Box>
       {exported && (
         <Box paddingX={1}>

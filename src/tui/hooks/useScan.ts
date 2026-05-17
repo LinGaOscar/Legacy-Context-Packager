@@ -11,7 +11,7 @@ export interface ScanState {
   error: string | null;
 }
 
-export function useScan(projectPath: string, includeSecrets: boolean): ScanState {
+export function useScan(projectPath: string | null, includeSecrets: boolean): ScanState {
   const [state, setState] = useState<ScanState>({
     phase: 'scanning',
     messages: [],
@@ -20,6 +20,8 @@ export function useScan(projectPath: string, includeSecrets: boolean): ScanState
   });
 
   useEffect(() => {
+    if (!projectPath) return;
+
     let cancelled = false;
     const messages: string[] = [];
 
