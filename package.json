@@ -2,6 +2,7 @@
   "name": "legacy-context-packager",
   "version": "0.1.0",
   "description": "企業遺留系統 LLM 前處理器：靜態抽取路由、入口、設定與敏感資訊，輸出精簡 context pack",
+  "type": "module",
   "main": "dist/cli/main.js",
   "bin": {
     "lcp": "dist/cli/main.js"
@@ -12,16 +13,28 @@
     "start": "node dist/cli/main.js",
     "clean": "rm -rf dist"
   },
-  "keywords": ["legacy", "scanner", "llm", "context", "java", "csharp", "php"],
+  "keywords": [
+    "legacy",
+    "scanner",
+    "llm",
+    "context",
+    "java",
+    "csharp",
+    "php"
+  ],
   "author": "LinGaOscar",
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "ink": "^7.0.3",
+    "ink-spinner": "^5.0.0",
+    "react": "^19.2.6"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
     "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
     "tsx": "^4.15.0",
     "typescript": "^5.4.0"
   }

@@ -2,22 +2,13 @@
 import { Command } from 'commander';
 import path from 'path';
 import fs from 'fs';
-import { loadProject } from '../core/project-loader.js';
-import { scanJavaRoutes } from '../scanners/java-route-scanner.js';
-import { scanCSharpRoutes } from '../scanners/csharp-route-scanner.js';
-import { scanPhpRoutes } from '../scanners/php-route-scanner.js';
-import { scanWarFile, cleanupWarTemp } from '../scanners/war-scanner.js';
-import { scanWebEntries } from '../scanners/web-entry-scanner.js';
-import { scanSecrets } from '../scanners/secret-scanner.js';
-import { scanDependencies } from '../scanners/dependency-scanner.js';
-import { normalize } from '../core/normalizer.js';
-import { redactSecrets } from '../core/redactor.js';
-import { buildDependencyMap, buildOpenApiLite } from '../core/condenser.js';
+import React from 'react';
+import { render } from 'ink';
+import { runScan } from '../core/runner.js';
 import { buildOutput } from '../core/output-builder.js';
-import { collectFiles } from '../core/file-collector.js';
-import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
-import type { Route } from '../models/route.js';
+import type { ContextPackType } from '../models/context-pack.js';
 import { diffScans, formatDiffMarkdown } from '../core/diff-engine.js';
+import { App } from '../tui/App.js';
 
 const VALID_FORMATS = new Set(['json', 'markdown']);
 const ALL_PACK_TYPES: ContextPackType[] = [
@@ -46,64 +37,13 @@ program
     secrets: boolean;
     report: boolean;
   }) => {
-    const startTime = Date.now();
     console.log(`\n[LCP] 開始掃描：${path.resolve(projectPath)}`);
 
-    let tempDir: string | undefined;
-
     try {
-      const project = loadProject(projectPath);
-      console.log(`[LCP] 語言：${project.language}  框架：${project.framework}`);
-
-      let routes: Route[] = [];
-
-      if (project.isWar) {
-        console.log('[LCP] 偵測到 WAR 檔，解壓中...');
-        const warResult = scanWarFile(project.rootDir);
-        routes = warResult.routes;
-        tempDir = warResult.tempDir;
-      } else {
-        const scanRootDir = project.rootDir;
-        if (project.language === 'java' || project.language === 'unknown') {
-          routes.push(...scanJavaRoutes(scanRootDir));
-        }
-        if (project.language === 'csharp' || project.language === 'unknown') {
-          routes.push(...scanCSharpRoutes(scanRootDir));
-        }
-        if (project.language === 'php' || project.language === 'unknown') {
-          routes.push(...scanPhpRoutes(scanRootDir));
-        }
-      }
-
-      const scanRoot = tempDir ?? project.rootDir;
-      const webEntries = scanWebEntries(scanRoot);
-      const rawSecrets = options.secrets ? scanSecrets(scanRoot) : [];
-      const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
-
-      const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
-      const redactedSecrets = redactSecrets(normalized.secrets);
-
-      const scannableFiles = collectFiles(scanRoot, {
-        extensions: ['.java', '.cs', '.php', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],
+      const result = await runScan(path.resolve(projectPath), {
+        secrets: options.secrets,
+        onProgress: msg => console.log(`[LCP] ${msg}`),
       });
-
-      const scanDurationMs = Date.now() - startTime;
-
-      const result: ProjectScanResult = {
-        projectInfo: {
-          rootPath: project.rootDir,
-          language: project.language,
-          framework: project.framework,
-          totalFiles: scannableFiles.length,
-          scannedFiles: scannableFiles.filter(f => !f.endsWith('.min.js')).length,
-          scanDurationMs,
-        },
-        routes: normalized.routes,
-        webEntries: normalized.webEntries,
-        secrets: redactedSecrets,
-        dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, rawDepMap),
-        openApiLite: buildOpenApiLite(normalized.routes),
-      };
 
       // 解析 format
       const formats = options.format.split(',').map(f => f.trim()).filter(f => {
@@ -129,7 +69,7 @@ program
 
       buildOutput(result, { outputDir: path.resolve(options.output), formats, packs, report: options.report });
 
-      console.log(`\n[LCP] 掃描完成 (${scanDurationMs}ms)`);
+      console.log(`\n[LCP] 掃描完成 (${result.projectInfo.scanDurationMs}ms)`);
       console.log(`  Routes:      ${result.routes.length}`);
       console.log(`  Web Entries: ${result.webEntries.length}`);
       console.log(`  Secrets:     ${result.secrets.length} (critical: ${result.secrets.filter(s => s.severity === 'critical').length})`);
@@ -141,9 +81,26 @@ program
         console.log(`  Report:      ${path.resolve(options.output)}/report.html`);
       }
       console.log(`  Output:      ${path.resolve(options.output)}`);
-    } finally {
-      if (tempDir) cleanupWarTemp(tempDir);
+    } catch (err) {
+      console.error(`[LCP] 錯誤：${(err as Error).message}`);
+      process.exit(1);
     }
+  });
+
+// ── lcp ui ────────────────────────────────────────────────────────────────────
+program
+  .command('ui <projectPath>')
+  .description('掃描並以互動式 TUI 瀏覽結果')
+  .option('--no-secrets', '跳過 secret 掃描')
+  .action((projectPath: string, options: { secrets: boolean }) => {
+    if (!process.stdin.isTTY) {
+      console.error('[LCP] ui 命令需要在互動式終端機中執行（不支援管線或非 TTY 環境）');
+      process.exit(1);
+    }
+    render(React.createElement(App, {
+      projectPath: path.resolve(projectPath),
+      secrets: options.secrets,
+    }));
   });
 
 // ── lcp diff ──────────────────────────────────────────────────────────────────
