@@ -68,6 +68,21 @@ function buildMarkdown(r: ProjectScanResult): string {
 
   lines.push(`# Context Pack — ${path.basename(p.rootPath)}`);
   lines.push(`\n> Language: \`${p.language}\` | Framework: \`${p.framework}\` | Scanned: ${p.scannedFiles}/${p.totalFiles} files | Duration: ${p.scanDurationMs}ms`);
+  lines.push(`
+## 給 LLM 的說明
+
+你收到的是一份由靜態分析工具自動產生的遺留系統盤點摘要，資料來自原始碼的靜態掃描，未執行程式。請依下列順序完成系統盤點：
+
+1. **技術棧摘要**：根據語言、框架與 config 檔案，描述此系統的技術選型與部署特徵
+2. **功能模組拆解**：根據 Routes 的 Controller 分組，推斷各模組的職責與邊界
+3. **前後端銜接**：對照 Web Entries 與 Routes，找出前端呼叫但後端可能缺少對應的路徑
+4. **安全風險摘要**：若 Secrets 有資料，依嚴重程度列出需優先處理的項目；若無則標注「未偵測到硬編碼敏感值」
+5. **盤點結論**：以條列式輸出「已釐清」與「需人工確認」的項目
+
+**資料品質說明：**
+- \`confidence: high\` 表示規則明確比對，可信度高
+- \`confidence: medium / low\` 表示推斷結果，建議人工核實
+- 動態路由、反射、自訂 middleware 產生的 API 不會出現在以下資料中`);
 
   lines.push('\n## Routes');
   if (r.routes.length === 0) {

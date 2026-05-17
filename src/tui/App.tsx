@@ -18,7 +18,7 @@ export function App({ projectPath: initialPath, secrets }: Props) {
   const scan = useScan(confirmedPath, secrets);
 
   if (!confirmedPath) {
-    return <InputScreen onConfirm={p => setConfirmedPath(path.resolve(p))} />;
+    return <InputScreen onConfirm={p => setConfirmedPath(p)} />;
   }
 
   if (scan.phase === 'error') {

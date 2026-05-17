@@ -71,12 +71,23 @@ tar --exclude='node_modules/.cache' \
 ### 互動式 TUI 瀏覽（需終端機環境）
 
 ```bash
-# 掃描後以互動式介面瀏覽結果（方向鍵導航，q 離開）
+# 不帶路徑，進入 TUI 後選擇掃描目標（建議）
+./lcp ui
+
+# 帶路徑直接開始掃描（略過選擇步驟）
 ./lcp ui ./my-java-project
 
 # Windows
-lcp.bat ui C:\path\to\project
+lcp.bat ui
 ```
+
+TUI 啟動後依序引導三個步驟：
+
+1. **選擇掃描目標類型**：專案目錄 或 單一檔案（`.war` / `.java` / `.cs` / `.php`）
+2. **選擇輸入方式**：瀏覽並選擇 或 直接輸入絕對路徑
+3. 若選擇「瀏覽」：以方向鍵在目錄樹中導航，Enter 進入子目錄或選取檔案，Backspace 返回上層
+
+各步驟可按 Esc 返回上一步。掃描完成後以分頁瀏覽結果，按 `e` 匯出當前分頁為 Markdown，`q` 離開。
 
 ### 比較兩次掃描差異
 
