@@ -40,66 +40,64 @@ tar --exclude='node_modules/.cache' \
 
 ## 使用方式
 
-專案根目錄提供 `./lcp`（macOS/Linux）與 `lcp.bat`（Windows）執行檔，可直接呼叫：
+專案根目錄提供 `./lcp`（macOS/Linux）與 `lcp.bat`（Windows）執行檔。
+
+### TUI 互動介面（建議）
 
 ```bash
-# 掃描資料夾（預設輸出至 ./lcp-output）
+./lcp ui        # macOS/Linux
+lcp.bat ui      # Windows
+```
+
+啟動後依序引導：
+
+| 步驟 | 說明 |
+|------|------|
+| 1. 選擇掃描目標類型 | 專案目錄 / 單一檔案（`.war` `.java` `.cs` `.php`） |
+| 2. 選擇輸入方式 | 瀏覽並選擇 / 直接輸入絕對路徑 |
+| 3. 瀏覽模式 | ↑↓ 移動，Enter 進入目錄或選取，Backspace 返回上層 |
+
+各步驟可按 **Esc** 返回上一步。
+
+掃描完成後分頁瀏覽結果：
+
+| 按鍵 | 功能 |
+|------|------|
+| Tab | 切換分頁（Routes / Secrets / Entries / Dependencies） |
+| ↑↓ / j k | 在列表中移動 |
+| Enter | 查看選取項目詳情 |
+| Esc | 關閉詳情，返回列表 |
+| e | 將當前分頁匯出為 Markdown |
+| q | 離開 |
+
+### 命令列掃描（進階）
+
+```bash
+# 掃描專案目錄
 ./lcp scan ./my-java-project
 
-# 掃描 WAR 檔
+# 掃描單一檔案
 ./lcp scan ./app.war
+./lcp scan ./Controller.java
 
 # 指定輸出目錄
 ./lcp scan ./my-project --output ./output
 
-# 跳過 secret 掃描（加快速度）
+# 跳過 secret 掃描
 ./lcp scan ./my-project --no-secrets
 
 # 不產出 report.html
 ./lcp scan ./my-project --no-report
-
-# 輸出指定 context pack 類型
-./lcp scan ./my-project --pack legacy-onboarding
-
-# 一次輸出所有 context pack
-./lcp scan ./my-project --pack all
-
-# 組合多種 pack
-./lcp scan ./my-project --pack security-review,api-analysis
 ```
-
-### 互動式 TUI 瀏覽（需終端機環境）
-
-```bash
-# 不帶路徑，進入 TUI 後選擇掃描目標（建議）
-./lcp ui
-
-# 帶路徑直接開始掃描（略過選擇步驟）
-./lcp ui ./my-java-project
-
-# Windows
-lcp.bat ui
-```
-
-TUI 啟動後依序引導三個步驟：
-
-1. **選擇掃描目標類型**：專案目錄 或 單一檔案（`.war` / `.java` / `.cs` / `.php`）
-2. **選擇輸入方式**：瀏覽並選擇 或 直接輸入絕對路徑
-3. 若選擇「瀏覽」：以方向鍵在目錄樹中導航，Enter 進入子目錄或選取檔案，Backspace 返回上層
-
-各步驟可按 Esc 返回上一步。掃描完成後以分頁瀏覽結果，按 `e` 匯出當前分頁為 Markdown，`q` 離開。
 
 ### 比較兩次掃描差異
 
 ```bash
-# 比較舊版與新版掃描結果，輸出 Markdown 差異報告
 ./lcp diff ./old-output ./new-output
-
-# 指定輸出路徑
 ./lcp diff ./old-output ./new-output --output ./changes.md
 ```
 
-差異報告會列出新增／移除的 routes，以及新偵測到或已消失的 secrets。
+差異報告列出新增／移除的 routes 與新偵測到或已消失的 secrets。
 
 ## 輸出檔案
 
@@ -185,10 +183,3 @@ Options:
 - **Secret 偵測必有誤報**，請搭配 confidence 欄位人工複審
 - **第一版不含 AST 深度解析**，採規則式 regex 掃描
 
-## 開發狀態
-
-| Phase | 狀態 | 內容 |
-|-------|------|------|
-| Phase 1 | ✅ 完成 | 專案類型判斷、Java/C#/PHP route 掃描、WAR 解壓、web entry、secret scanner、JSON 匯出 |
-| Phase 2 | ✅ 完成 | Import 依賴分析、openapi-lite 強化、5 種 context pack generator |
-| Phase 3 | ✅ 完成 | 互動式 HTML 報告、搜尋篩選、Markdown 匯出、`lcp diff` 版本差異比較 |
