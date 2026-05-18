@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { createRequire } from 'module';
-const { version } = createRequire(import.meta.url)('../../package.json') as { version: string };
+const { version } = createRequire(import.meta.url)('../../../package.json') as { version: string };
 
 export function Logo() {
   return (
