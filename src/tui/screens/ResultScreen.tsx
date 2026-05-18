@@ -5,6 +5,7 @@ import path from 'path';
 import { Header } from '../components/Header.js';
 import { TabBar, TABS, type TabName } from '../components/TabBar.js';
 import { StatusBar } from '../components/StatusBar.js';
+import { buildOutput } from '../../core/output-builder.js';
 import { RoutesPanel } from '../panels/RoutesPanel.js';
 import { SecretsPanel } from '../panels/SecretsPanel.js';
 import { EntriesPanel } from '../panels/EntriesPanel.js';
@@ -17,6 +18,7 @@ export function ResultScreen({ result }: Props) {
   const { exit } = useApp();
   const [tabIdx, setTabIdx] = useState(0);
   const [exported, setExported] = useState<string | null>(null);
+  const [savedPath, setSavedPath] = useState<string | null>(null);
 
   const activeTab = TABS[tabIdx];
 
@@ -29,6 +31,11 @@ export function ResultScreen({ result }: Props) {
     if (input === 'e') {
       const outPath = exportMarkdown(result, activeTab);
       setExported(outPath);
+    }
+    if (input === 's' && !savedPath) {
+      const outDir = path.resolve('./lcp-output');
+      buildOutput(result, { outputDir: outDir, formats: ['json', 'markdown'], report: true });
+      setSavedPath(outDir);
     }
   });
 
@@ -54,7 +61,7 @@ export function ResultScreen({ result }: Props) {
           <Text color="green">✓ 已匯出：{exported}</Text>
         </Box>
       )}
-      <StatusBar />
+      <StatusBar savedPath={savedPath} />
     </Box>
   );
 }

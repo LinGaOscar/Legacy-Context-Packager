@@ -4,16 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import React from 'react';
 import { render } from 'ink';
-import { runScan } from '../core/runner.js';
-import { buildOutput } from '../core/output-builder.js';
-import type { ContextPackType } from '../models/context-pack.js';
 import { diffScans, formatDiffMarkdown } from '../core/diff-engine.js';
 import { App } from '../tui/App.js';
-
-const VALID_FORMATS = new Set(['json', 'markdown']);
-const ALL_PACK_TYPES: ContextPackType[] = [
-  'api-analysis', 'security-review', 'secret-exposure', 'legacy-onboarding', 'endpoint-test',
-];
 
 const program = new Command();
 
@@ -22,70 +14,14 @@ program
   .description('Legacy Context Packager — 企業遺留系統 LLM 前處理器')
   .version('0.3.0');
 
-program
-  .command('scan <projectPath>')
-  .description('掃描專案並輸出 context pack')
-  .option('-o, --output <dir>', '輸出目錄', './lcp-output')
-  .option('--format <formats>', '輸出格式（json,markdown）', 'json,markdown')
-  .option('--pack <types>', `輸出的 context pack 類型，逗號分隔或 "all"。\n  可選：${ALL_PACK_TYPES.join(', ')}`)
-  .option('--no-secrets', '跳過 secret 掃描（加快速度）')
-  .option('--no-report', '不產出 report.html')
-  .action(async (projectPath: string, options: {
-    output: string;
-    format: string;
-    pack?: string;
-    secrets: boolean;
-    report: boolean;
-  }) => {
-    console.log(`\n[LCP] 開始掃描：${path.resolve(projectPath)}`);
-
-    try {
-      const result = await runScan(path.resolve(projectPath), {
-        secrets: options.secrets,
-        onProgress: msg => console.log(`[LCP] ${msg}`),
-      });
-
-      // 解析 format
-      const formats = options.format.split(',').map(f => f.trim()).filter(f => {
-        if (!VALID_FORMATS.has(f)) { console.warn(`[LCP] 警告：不支援的格式 "${f}"，已跳過`); return false; }
-        return true;
-      }) as ('json' | 'markdown')[];
-
-      // 解析 pack 類型
-      let packs: ContextPackType[] = [];
-      if (options.pack) {
-        if (options.pack === 'all') {
-          packs = ALL_PACK_TYPES;
-        } else {
-          packs = options.pack.split(',').map(p => p.trim()).filter(p => {
-            if (!ALL_PACK_TYPES.includes(p as ContextPackType)) {
-              console.warn(`[LCP] 警告：不支援的 pack 類型 "${p}"，已跳過`);
-              return false;
-            }
-            return true;
-          }) as ContextPackType[];
-        }
-      }
-
-      buildOutput(result, { outputDir: path.resolve(options.output), formats, packs, report: options.report });
-
-      console.log(`\n[LCP] 掃描完成 (${result.projectInfo.scanDurationMs}ms)`);
-      console.log(`  Routes:      ${result.routes.length}`);
-      console.log(`  Web Entries: ${result.webEntries.length}`);
-      console.log(`  Secrets:     ${result.secrets.length} (critical: ${result.secrets.filter(s => s.severity === 'critical').length})`);
-      console.log(`  Config files: ${result.dependencyMap.configFiles.length}`);
-      if (packs.length > 0) {
-        console.log(`  Packs:       ${packs.join(', ')}`);
-      }
-      if (options.report !== false) {
-        console.log(`  Report:      ${path.resolve(options.output)}/report.html`);
-      }
-      console.log(`  Output:      ${path.resolve(options.output)}`);
-    } catch (err) {
-      console.error(`[LCP] 錯誤：${(err as Error).message}`);
-      process.exit(1);
-    }
-  });
+// 無子命令時直接開 TUI
+program.action(() => {
+  if (!process.stdin.isTTY) {
+    console.error('[LCP] 需要在互動式終端機中執行');
+    process.exit(1);
+  }
+  render(React.createElement(App, { secrets: true }));
+});
 
 // ── lcp ui ────────────────────────────────────────────────────────────────────
 program
@@ -94,7 +30,7 @@ program
   .option('--no-secrets', '跳過 secret 掃描')
   .action((projectPath: string | undefined, options: { secrets: boolean }) => {
     if (!process.stdin.isTTY) {
-      console.error('[LCP] ui 命令需要在互動式終端機中執行（不支援管線或非 TTY 環境）');
+      console.error('[LCP] 需要在互動式終端機中執行');
       process.exit(1);
     }
     render(React.createElement(App, {
@@ -114,11 +50,11 @@ program
     const resolvedOld = path.resolve(oldDir);
     const resolvedNew = path.resolve(newDir);
     if (!fs.existsSync(path.join(resolvedOld, 'routes.json'))) {
-      console.error(`[LCP] 錯誤：${oldDir} 不包含 routes.json，請確認路徑為有效的 lcp scan 輸出目錄`);
+      console.error(`[LCP] 錯誤：${oldDir} 不包含 routes.json`);
       process.exit(1);
     }
     if (!fs.existsSync(path.join(resolvedNew, 'routes.json'))) {
-      console.error(`[LCP] 錯誤：${newDir} 不包含 routes.json，請確認路徑為有效的 lcp scan 輸出目錄`);
+      console.error(`[LCP] 錯誤：${newDir} 不包含 routes.json`);
       process.exit(1);
     }
 
@@ -128,11 +64,11 @@ program
 
     fs.writeFileSync(outPath, md, 'utf8');
 
-    console.log(`  Routes added:    ${diff.routes.added.length}`);
-    console.log(`  Routes removed:  ${diff.routes.removed.length}`);
-    console.log(`  Secrets new:     ${diff.secrets.newFound.length}`);
+    console.log(`  Routes added:     ${diff.routes.added.length}`);
+    console.log(`  Routes removed:   ${diff.routes.removed.length}`);
+    console.log(`  Secrets new:      ${diff.secrets.newFound.length}`);
     console.log(`  Secrets resolved: ${diff.secrets.resolved.length}`);
-    console.log(`  Report:          ${outPath}`);
+    console.log(`  Report:           ${outPath}`);
   });
 
 program.parse();

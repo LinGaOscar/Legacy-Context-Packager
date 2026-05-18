@@ -40,16 +40,18 @@ tar --exclude='node_modules/.cache' \
 
 ## 使用方式
 
-專案根目錄提供 `./lcp`（macOS/Linux）與 `lcp.bat`（Windows）執行檔。
+所有掃描操作均透過 TUI 互動介面進行。
 
-### TUI 互動介面（建議）
+### 啟動
 
 ```bash
-./lcp ui        # macOS/Linux
-lcp.bat ui      # Windows
+./lcp          # macOS/Linux（無子命令直接開 TUI）
+lcp.bat        # Windows
 ```
 
-啟動後依序引導：
+### 掃描流程
+
+啟動後依序引導三個步驟：
 
 | 步驟 | 說明 |
 |------|------|
@@ -59,7 +61,9 @@ lcp.bat ui      # Windows
 
 各步驟可按 **Esc** 返回上一步。
 
-掃描完成後分頁瀏覽結果：
+### 結果瀏覽與輸出
+
+掃描完成後以分頁瀏覽結果：
 
 | 按鍵 | 功能 |
 |------|------|
@@ -67,28 +71,9 @@ lcp.bat ui      # Windows
 | ↑↓ / j k | 在列表中移動 |
 | Enter | 查看選取項目詳情 |
 | Esc | 關閉詳情，返回列表 |
+| s | 儲存完整輸出至 `./lcp-output/`（JSON、Markdown、HTML） |
 | e | 將當前分頁匯出為 Markdown |
 | q | 離開 |
-
-### 命令列掃描（進階）
-
-```bash
-# 掃描專案目錄
-./lcp scan ./my-java-project
-
-# 掃描單一檔案
-./lcp scan ./app.war
-./lcp scan ./Controller.java
-
-# 指定輸出目錄
-./lcp scan ./my-project --output ./output
-
-# 跳過 secret 掃描
-./lcp scan ./my-project --no-secrets
-
-# 不產出 report.html
-./lcp scan ./my-project --no-report
-```
 
 ### 比較兩次掃描差異
 
@@ -156,24 +141,17 @@ lcp.bat ui      # Windows
 ## 選項說明
 
 ```
-lcp scan <projectPath> [options]
+lcp [ui] [projectPath]
 
 Options:
-  -o, --output <dir>     輸出目錄（預設：./lcp-output）
-  --format <formats>     輸出格式，逗號分隔（預設：json,markdown）
-  --pack <types>         context pack 類型，逗號分隔或 "all"
-                         可選：api-analysis, security-review, secret-exposure,
-                               legacy-onboarding, endpoint-test
-  --no-secrets           跳過 secret 掃描
-  --no-report            不產出 report.html
+  --no-secrets           跳過 secret 掃描（加快速度）
   -h, --help             顯示說明
   -V, --version          顯示版本
 
-lcp diff <oldDir> <newDir> [options]
+lcp diff <oldDir> <newDir>
 
 Options:
   -o, --output <file>    差異報告輸出路徑（預設：./lcp-diff.md）
-  -h, --help             顯示說明
 ```
 
 ## 重要限制
