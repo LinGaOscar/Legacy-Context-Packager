@@ -29,7 +29,7 @@ export function RoutesPanel({ routes, active, onExport }: Props) {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Box paddingBottom={1}>
-        <Text color="gray" dimColor>靜態掃描出的 API 路由清單，含 HTTP method、路徑與對應的 Controller 方法。可貼給 LLM 分析 API 結構或產生測試案例。</Text>
+        <Text color="gray">靜態掃描出的 API 路由清單，含 HTTP method、路徑與對應的 Controller 方法。可貼給 LLM 分析 API 結構或產生測試案例。</Text>
       </Box>
       <ScrollTable columns={COLS} rows={routes} selectedIdx={table.selectedIdx} offset={table.offset} />
       {table.detailOpen && table.selected && (

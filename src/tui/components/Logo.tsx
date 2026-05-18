@@ -15,8 +15,8 @@ export function Logo() {
 
       <Box flexDirection="column">
         <Text color="white">Legacy Context Packager</Text>
-        <Text color="gray" dimColor>企業遺留系統靜態分析 → LLM 上下文包</Text>
-        <Text color="gray" dimColor>v{version}</Text>
+        <Text color="white">企業遺留系統靜態分析 → LLM 上下文包</Text>
+        <Text color="gray">v{version}</Text>
       </Box>
     </Box>
   );

@@ -22,7 +22,7 @@ export function TabBar({ active, counts }: Props) {
             borderBottom={isActive}
             borderColor={isActive ? 'blueBright' : undefined}
           >
-            <Text bold={isActive} color={isActive ? 'blueBright' : 'gray'}>
+            <Text bold={isActive} color={isActive ? 'blueBright' : 'white'}>
               {i > 0 ? '│ ' : ''}{label}
             </Text>
           </Box>

@@ -17,7 +17,7 @@ export function Header({ result }: Props) {
       <Text bold>{name}</Text>
       <Text color="cyan">[{p.language}]</Text>
       <Text color="green">[{p.framework}]</Text>
-      <Text color="gray">{p.totalFiles} files · {p.scanDurationMs}ms</Text>
+      <Text color="white">{p.totalFiles} files · {p.scanDurationMs}ms</Text>
       {critCount > 0 && <Text color="red" bold>⚠ {critCount} critical secrets</Text>}
     </Box>
   );

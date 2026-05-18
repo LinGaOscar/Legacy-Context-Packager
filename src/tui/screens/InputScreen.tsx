@@ -87,7 +87,7 @@ export function InputScreen({ onConfirm }: Props) {
             items={['專案目錄（Java / C# / PHP / WAR 解壓目錄）', '單一檔案（.war / .java / .cs / .php）']}
             selectedIdx={radioIdx}
           />
-          <Text color="gray" dimColor>↑↓ 移動　Enter 確認</Text>
+          <Text color="gray">↑↓ 移動　Enter 確認</Text>
         </Box>
       )}
 
@@ -100,7 +100,7 @@ export function InputScreen({ onConfirm }: Props) {
             items={['瀏覽並選擇', '直接輸入絕對路徑']}
             selectedIdx={radioIdx}
           />
-          <Text color="gray" dimColor>↑↓ 移動　Enter 確認　Esc 返回</Text>
+          <Text color="gray">↑↓ 移動　Enter 確認　Esc 返回</Text>
         </Box>
       )}
 
@@ -126,7 +126,7 @@ export function InputScreen({ onConfirm }: Props) {
           </Box>
           {typeError
             ? <Text color="red">{typeError}</Text>
-            : <Text color="gray" dimColor>Enter 確認　Esc 返回</Text>
+            : <Text color="gray">Enter 確認　Esc 返回</Text>
           }
         </Box>
       )}
