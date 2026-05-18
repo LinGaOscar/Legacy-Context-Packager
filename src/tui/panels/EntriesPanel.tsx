@@ -20,6 +20,9 @@ export function EntriesPanel({ entries, active }: Props) {
 
   return (
     <Box flexDirection="column" flexGrow={1}>
+      <Box paddingBottom={1}>
+        <Text color="gray" dimColor>掃描 HTML 頁面的 form action、fetch、axios、jQuery AJAX 等前端呼叫，用於對照前後端 API 銜接是否一致。</Text>
+      </Box>
       <ScrollTable columns={COLS} rows={entries} selectedIdx={table.selectedIdx} offset={table.offset} />
       {table.detailOpen && table.selected && (
         <DetailOverlay item={table.selected} />

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 lcp-output/
+lcp-export-*.md
 *.js.map
 *.d.ts
 .DS_Store

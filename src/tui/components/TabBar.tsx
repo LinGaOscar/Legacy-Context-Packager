@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 
-export const TABS = ['Routes', 'Secrets', 'Entries', 'Dependencies'] as const;
+export const TABS = ['Routes', 'Secrets', 'Entries', 'Dependencies', 'Export'] as const;
 export type TabName = typeof TABS[number];
 
 interface Props {

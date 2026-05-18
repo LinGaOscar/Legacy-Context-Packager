@@ -12,13 +12,18 @@ interface Entry {
   name: string;
   isDir: boolean;
   isConfirm: boolean;
+  isUp?: boolean;
   fullPath: string;
 }
 
 function readEntries(dirPath: string, mode: BrowseMode): Entry[] {
-  const confirm: Entry[] = mode === 'directory'
-    ? [{ name: '[ 選擇此目錄 ]', isDir: false, isConfirm: true, fullPath: dirPath }]
-    : [];
+  const parent = path.dirname(dirPath);
+  const canGoUp = parent !== dirPath;
+
+  const special: Entry[] = [
+    ...(canGoUp ? [{ name: '[ ↑ 回到上層 ]', isDir: true, isConfirm: false, fullPath: parent, isUp: true }] : []),
+    ...(mode === 'directory' ? [{ name: '[ 選擇此目錄 ]', isDir: false, isConfirm: true, fullPath: dirPath, isUp: false }] : []),
+  ];
 
   let items: Entry[] = [];
   try {
@@ -42,7 +47,7 @@ function readEntries(dirPath: string, mode: BrowseMode): Entry[] {
     return a.name.localeCompare(b.name);
   });
 
-  return [...confirm, ...items];
+  return [...special, ...items];
 }
 
 interface Props {
@@ -77,11 +82,11 @@ export function FileBrowser({ mode, startDir, onConfirm, onCancel }: Props) {
       const entry = entries[selectedIdx];
       if (!entry) return;
       if (entry.isConfirm) { onConfirm(entry.fullPath); return; }
-      if (entry.isDir) {
+      if (entry.isUp || (entry.isDir && !entry.isConfirm)) {
         setCurrentDir(entry.fullPath);
         setSelectedIdx(0);
         setOffset(0);
-      } else {
+      } else if (!entry.isDir) {
         onConfirm(entry.fullPath);
       }
     }
@@ -111,7 +116,7 @@ export function FileBrowser({ mode, startDir, onConfirm, onCancel }: Props) {
         {visible.map((entry, i) => {
           const absIdx = offset + i;
           const isSelected = absIdx === selectedIdx;
-          const color = entry.isConfirm ? 'green' : entry.isDir ? 'blueBright' : 'white';
+          const color = entry.isUp ? 'yellow' : entry.isConfirm ? 'green' : entry.isDir ? 'blueBright' : 'white';
           return (
             <Box key={entry.fullPath + i} backgroundColor={isSelected ? 'blueBright' : undefined}>
               <Text color={isSelected ? 'black' : color}>

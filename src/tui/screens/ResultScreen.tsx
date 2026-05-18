@@ -5,11 +5,14 @@ import path from 'path';
 import { Header } from '../components/Header.js';
 import { TabBar, TABS, type TabName } from '../components/TabBar.js';
 import { StatusBar } from '../components/StatusBar.js';
+import { Logo } from '../components/Logo.js';
 import { buildOutput } from '../../core/output-builder.js';
+import { LCP_OUTPUT_DIR } from '../../core/paths.js';
 import { RoutesPanel } from '../panels/RoutesPanel.js';
 import { SecretsPanel } from '../panels/SecretsPanel.js';
 import { EntriesPanel } from '../panels/EntriesPanel.js';
 import { DepsPanel } from '../panels/DepsPanel.js';
+import { ExportPanel } from '../panels/ExportPanel.js';
 import type { ProjectScanResult } from '../../models/context-pack.js';
 
 interface Props { result: ProjectScanResult; }
@@ -33,9 +36,8 @@ export function ResultScreen({ result }: Props) {
       setExported(outPath);
     }
     if (input === 's' && !savedPath) {
-      const outDir = path.resolve('./lcp-output');
-      buildOutput(result, { outputDir: outDir, formats: ['json', 'markdown'], report: true });
-      setSavedPath(outDir);
+      buildOutput(result, { outputDir: LCP_OUTPUT_DIR, formats: ['json', 'markdown'], report: true });
+      setSavedPath(LCP_OUTPUT_DIR);
     }
   });
 
@@ -44,10 +46,12 @@ export function ResultScreen({ result }: Props) {
     Secrets: result.secrets.length,
     Entries: result.webEntries.length,
     Dependencies: null,
+    Export: null,
   };
 
   return (
     <Box flexDirection="column">
+      <Logo />
       <Header result={result} />
       <TabBar active={activeTab} counts={counts} />
       <Box flexDirection="column" flexGrow={1} paddingX={1} paddingY={0}>
@@ -55,6 +59,7 @@ export function ResultScreen({ result }: Props) {
         {activeTab === 'Secrets'      && <SecretsPanel secrets={result.secrets}        active={true} />}
         {activeTab === 'Entries'      && <EntriesPanel entries={result.webEntries}     active={true} />}
         {activeTab === 'Dependencies' && <DepsPanel    depMap={result.dependencyMap} active={true} />}
+        {activeTab === 'Export'       && <ExportPanel  result={result}               active={true} />}
       </Box>
       {exported && (
         <Box paddingX={1}>
@@ -96,7 +101,8 @@ function exportMarkdown(result: ProjectScanResult, tab: TabName): string {
     for (const f of result.dependencyMap.configFiles) lines.push(`- ${f}`);
   }
 
-  const outPath = path.resolve(`lcp-export-${tab.toLowerCase()}.md`);
+  const outPath = path.join(LCP_OUTPUT_DIR, `export-${tab.toLowerCase()}.md`);
+  fs.mkdirSync(LCP_OUTPUT_DIR, { recursive: true });
   fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
   return outPath;
 }

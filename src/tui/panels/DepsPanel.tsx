@@ -50,6 +50,9 @@ export function DepsPanel({ depMap, active }: Props) {
 
   return (
     <Box flexDirection="column" gap={1}>
+      <Box>
+        <Text color="gray" dimColor>模組與檔案的依賴關係摘要，以及偵測到的設定檔清單。可用於快速了解專案結構與 config 分佈。</Text>
+      </Box>
       <Box flexDirection="row" gap={4}>
         <StatCard value={depMap.nodes.length}       label="Nodes" />
         <StatCard value={depMap.edges.length}       label="Dep Edges" />

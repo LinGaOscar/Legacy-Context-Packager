@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text, useInput, type Key } from 'ink';
 import path from 'path';
 import { FileBrowser, type BrowseMode } from '../components/FileBrowser.js';
+import { Logo } from '../components/Logo.js';
 
 type ScanMode   = 'directory' | 'file';
 type InputMethod = 'browse' | 'type';
@@ -76,10 +77,7 @@ export function InputScreen({ onConfirm }: Props) {
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
-      <Box flexDirection="column">
-        <Text bold color="blueBright">Legacy Context Packager</Text>
-        <Text color="gray" dimColor>企業遺留系統 LLM 前處理器</Text>
-      </Box>
+      <Logo />
 
       {/* ── Step 1: 選目標類型 ── */}
       {phase === 'mode-select' && (
