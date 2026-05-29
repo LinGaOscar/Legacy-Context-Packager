@@ -1,13 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import type { ProjectScanResult, ContextPackType } from '../models/context-pack.js';
-import { generateContextPack } from './context-pack-generator.js';
+import type { ProjectScanResult } from '../models/context-pack.js';
 import { buildReportHtml } from './report-builder.js';
 
 export interface OutputOptions {
   outputDir: string;
   formats: ('json' | 'markdown')[];
-  packs?: ContextPackType[];
   report?: boolean; // 是否產出 report.html（預設 true）
 }
 
@@ -37,15 +35,6 @@ export function buildOutput(result: ProjectScanResult, opts: OutputOptions): voi
     fs.writeFileSync(path.join(opts.outputDir, 'report.html'), html, 'utf8');
   }
 
-  // 輸出各目的 context pack
-  if (opts.packs && opts.packs.length > 0) {
-    const packsDir = path.join(opts.outputDir, 'packs');
-    fs.mkdirSync(packsDir, { recursive: true });
-    for (const packType of opts.packs) {
-      const content = generateContextPack(result, packType);
-      fs.writeFileSync(path.join(packsDir, `${packType}.md`), content, 'utf8');
-    }
-  }
 }
 
 function writeJson(filePath: string, data: unknown): void {

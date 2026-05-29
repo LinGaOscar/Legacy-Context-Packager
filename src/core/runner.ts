@@ -9,6 +9,7 @@ import { scanSecrets } from '../scanners/secret-scanner.js';
 import { scanDependencies } from '../scanners/dependency-scanner.js';
 import { normalize } from './normalizer.js';
 import { redactSecrets } from './redactor.js';
+import { loadAllowlist, filterAllowlisted } from './allowlist.js';
 import { buildDependencyMap, buildOpenApiLite } from './condenser.js';
 import { collectFiles } from './file-collector.js';
 import type { ProjectScanResult } from '../models/context-pack.js';
@@ -53,7 +54,10 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
     const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
-    const redactedSecrets = redactSecrets(normalized.secrets);
+    const redactedSecrets = filterAllowlisted(
+      redactSecrets(normalized.secrets),
+      loadAllowlist(project.rootDir),
+    );
 
     const scannableFiles = collectFiles(scanRoot, {
       extensions: ['.java', '.cs', '.php', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],

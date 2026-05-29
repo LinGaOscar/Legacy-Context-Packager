@@ -13,13 +13,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev -- ui [projectPath]
 npm run dev -- diff <oldDir> <newDir>
 
+# 型別檢查（不輸出）
+npx tsc --noEmit
+
 # 編譯為 dist/
 npm run build
+
+# 清除 dist/
+npm run clean
 
 # 正式執行
 ./lcp              # macOS / Linux
 lcp.bat            # Windows
 ```
+
+> 此專案目前**無測試框架**，`package.json` 未設 test script。
 
 ## 技術選型
 
@@ -28,10 +36,16 @@ lcp.bat            # Windows
 - **TUI**：Ink 7 + React 19
 - **HTML report**：靜態 HTML 內嵌 JSON，瀏覽器直接開啟，不需 server
 
+## ESM / TypeScript 注意事項
+
+- **相對 import 必須用 `.js` 副檔名**：`tsconfig` 設 `"module": "Node16"`，即使檔案是 `.ts`，import 路徑仍須寫 `'./foo.js'`。
+- **React 需顯式 import**：`tsconfig` 用 `"jsx": "react"`（非 `react-jsx`），每個 TSX 元件頂部必須有 `import React from 'react'`，否則編譯失敗。
+- **JSON import**：`resolveJsonModule: true` 已啟用，可直接 `import pkg from '../../package.json'`。
+
 ## 架構與模組
 
 **Pipeline 流程**（由 `src/core/runner.ts` 協調）：
-`project-loader → file-collector → Scanners（語言別）→ normalizer → redactor → condenser → output-builder`
+`project-loader → file-collector → Scanners（語言別）→ normalizer → redactor → allowlist-filter → condenser → output-builder`
 
 ```
 src/
@@ -44,10 +58,10 @@ src/
 │  ├─ framework-detector.ts # 偵測 Spring / Laravel / ASP.NET Core 等
 │  ├─ normalizer.ts         # 各語言 scanner 結果合併成共通格式
 │  ├─ redactor.ts           # 敏感值遮罩（先於任何輸出執行）
+│  ├─ allowlist.ts          # 讀取 .lcp-allowlist.json，過濾誤報 secret
 │  ├─ condenser.ts          # 產出 dependencyMap 與 openApiLite
 │  ├─ output-builder.ts     # 寫出 JSON / Markdown / report.html
 │  ├─ report-builder.ts     # 產生內嵌資料的靜態 HTML report
-│  ├─ context-pack-generator.ts  # 產生 LLM 上下文包
 │  └─ diff-engine.ts        # 比較兩次掃描結果
 ├─ scanners/
 │  ├─ java-route-scanner.ts   # @RequestMapping / @GetMapping / JAX-RS
@@ -86,9 +100,8 @@ ProjectScanResult {
   routes[],      // { language, framework, httpMethod, path, sourceFile, className, methodName, confidence }
   webEntries[],  // { entryType, pagePath, targetPath, invokeType, sourceFile, lineNumber, confidence }
   secrets[],     // { secretType, filePath, lineNumber, maskedValue, severity, confidence, ruleId }
-  dependencies[],
+  dependencyMap,
   openApiLite,
-  contextPack
 }
 ```
 
@@ -118,7 +131,7 @@ ProjectScanResult {
 ## 重要限制與設計原則
 
 - **Redactor 優先**：任何輸出前必須先執行遮罩，確保 maskedValue 不含明文敏感資訊。
-- **信心分數分級**：Secret detection 必有誤報，confidence 欄位與 allowlist 是必要設計。
+- **Secret Allowlist**：在目標專案根目錄放 `.lcp-allowlist.json`（`[{ "ruleId": "...", "filePath": "..." }]`）可過濾誤報。`filePath` 為子字串比對，兩欄位均 optional 但至少需填一個。
 - **靜態分析精度上限**：動態路由、反射、custom middleware 無法靜態推斷。
 - **WAR 無 source code 時**：僅能從 `web.xml` 推斷路由，標注 `confidence: low`。
 - **openapi-lite 定位**：近似結果，不等同完整 OpenAPI spec。
