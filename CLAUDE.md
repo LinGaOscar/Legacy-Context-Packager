@@ -9,22 +9,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用指令
 
 ```bash
-# 開發時執行（不需先 build）
-npm run dev -- ui [projectPath]
+# 正式使用（先 build 一次，之後直接執行）
+npm run build
+./lcp              # macOS / Linux（TUI 引導選擇目標路徑）
+lcp.bat            # Windows
+
+# 開發時（不需先 build，tsx 直接執行）
+npm run dev -- ui
 npm run dev -- diff <oldDir> <newDir>
 
-# 型別檢查（不輸出）
+# 型別檢查
 npx tsc --noEmit
-
-# 編譯為 dist/
-npm run build
 
 # 清除 dist/
 npm run clean
-
-# 正式執行
-./lcp              # macOS / Linux
-lcp.bat            # Windows
 ```
 
 > 此專案目前**無測試框架**，`package.json` 未設 test script。

@@ -70,10 +70,20 @@ export function scanJavaRoutes(rootDir: string): Route[] {
       }
 
       // 偵測 class 層級的 @RequestMapping / @Path，暫存到 pendingClassPath
+      // 向前最多 8 行找 class 宣告，因為中間可能夾有其他 annotation（@RequiredArgsConstructor 等）
       const classMappingMatch = line.match(/@(?:RequestMapping|Path)\s*\(\s*["']([^"']+)["']/);
       if (classMappingMatch) {
-        const nextLine = lines[i + 1]?.trim() ?? '';
-        if (nextLine.includes('class ')) {
+        let isClassLevel = false;
+        for (let k = i + 1; k < Math.min(i + 8, lines.length); k++) {
+          const ahead = lines[k].trim();
+          if (ahead.match(/(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\s+)*class\s+\w+/)) {
+            isClassLevel = true;
+            break;
+          }
+          // 遇到方法簽名代表已超出 class header 範圍，停止
+          if (ahead.match(/(?:public|protected|private)\s+\w[\w<>,\s]+\s+\w+\s*\(/) && !ahead.includes(' class ')) break;
+        }
+        if (isClassLevel) {
           pendingClassPath = classMappingMatch[1];
           continue;
         }
