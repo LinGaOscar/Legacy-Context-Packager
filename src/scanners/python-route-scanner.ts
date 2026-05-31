@@ -19,7 +19,7 @@ function scanFlask(lines: string[], filePath: string): Route[] {
   const re = /^\s*@\w+\.route\s*\(\s*['"]([^'"]+)['"]([\s\S]*?)\)/;
 
   for (let i = 0; i < lines.length; i++) {
-    const combined = lines[i] + (lines[i + 1] ?? '');
+    const combined = lines.slice(i, Math.min(i + 4, lines.length)).join(' ');
     const m = combined.match(re);
     if (!m) continue;
 
@@ -56,7 +56,7 @@ function scanDjango(lines: string[], filePath: string): Route[] {
     const m = lines[i].match(re);
     if (!m) continue;
 
-    let routePath = m[1].replace(/^\^/, '/').replace(/\$$/, '');
+    let routePath = m[1].replace(/^\^/, '').replace(/\$$/, '');
     if (!routePath.startsWith('/')) routePath = '/' + routePath;
 
     routes.push({
