@@ -19,7 +19,19 @@ export function scanNodejsRoutes(rootDir: string): Route[] {
     try { content = fs.readFileSync(filePath, 'utf8'); } catch { continue; }
 
     const lines = content.split('\n');
-    const re = /(?:app|router|server)\.(get|post|put|delete|patch|options|head|all|use)\s*\(\s*['"`]([^'"`]+)['"`]/;
+
+    // 收集所有宣告為 express.Router() 的變數名稱，避免自訂名稱被漏掃
+    const routerVars = new Set<string>(['app', 'router', 'server']);
+    const routerDeclRe = /(?:const|let|var)\s+(\w+)\s*=\s*(?:express\.Router|Router)\s*\(/g;
+    let dm: RegExpExecArray | null;
+    while ((dm = routerDeclRe.exec(content)) !== null) {
+      routerVars.add(dm[1]);
+    }
+
+    const varPattern = [...routerVars].join('|');
+    const re = new RegExp(
+      `(?:${varPattern})\\.(get|post|put|delete|patch|options|head|all|use)\\s*\\(\\s*['"\`]([^'"\`]+)['"\`]`
+    );
 
     for (let i = 0; i < lines.length; i++) {
       const m = lines[i].trim().match(re);
