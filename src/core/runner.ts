@@ -7,6 +7,9 @@ import { scanWarFile, cleanupWarTemp } from '../scanners/war-scanner.js';
 import { scanWebEntries } from '../scanners/web-entry-scanner.js';
 import { scanSecrets } from '../scanners/secret-scanner.js';
 import { scanDependencies } from '../scanners/dependency-scanner.js';
+import { scanNodejsRoutes } from '../scanners/nodejs-route-scanner.js';
+import { scanPythonRoutes } from '../scanners/python-route-scanner.js';
+import { scanPkgDeps } from '../scanners/pkg-deps-scanner.js';
 import { normalize } from './normalizer.js';
 import { redactSecrets } from './redactor.js';
 import { loadAllowlist, filterAllowlisted } from './allowlist.js';
@@ -43,6 +46,8 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
       if (project.language === 'java' || project.language === 'unknown') routes.push(...scanJavaRoutes(root));
       if (project.language === 'csharp' || project.language === 'unknown') routes.push(...scanCSharpRoutes(root));
       if (project.language === 'php' || project.language === 'unknown') routes.push(...scanPhpRoutes(root));
+      if (project.language === 'nodejs' || project.language === 'unknown') routes.push(...scanNodejsRoutes(root));
+      if (project.language === 'python' || project.language === 'unknown') routes.push(...scanPythonRoutes(root));
     }
 
     const scanRoot = tempDir ?? project.rootDir;
@@ -51,6 +56,8 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     const webEntries = scanWebEntries(scanRoot);
 
     const rawSecrets = includeSecrets ? (report('掃描 Secrets...'), scanSecrets(scanRoot)) : [];
+    report('掃描套件依賴...');
+    const pkgDeps = scanPkgDeps(project.rootDir);
     const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
     const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
@@ -60,7 +67,7 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     );
 
     const scannableFiles = collectFiles(scanRoot, {
-      extensions: ['.java', '.cs', '.php', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],
+      extensions: ['.java', '.cs', '.php', '.py', '.html', '.jsp', '.js', '.ts', '.xml', '.json', '.yml', '.yaml'],
     });
 
     return {
@@ -77,6 +84,7 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
       secrets: redactedSecrets,
       dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, rawDepMap),
       openApiLite: buildOpenApiLite(normalized.routes),
+      pkgDeps,
     };
   } finally {
     if (tempDir) cleanupWarTemp(tempDir);
