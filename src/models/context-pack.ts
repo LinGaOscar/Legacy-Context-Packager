@@ -2,6 +2,7 @@ import type { Route, Language, Framework } from './route.js';
 import type { Secret } from './secret.js';
 import type { WebEntry } from './entry.js';
 import type { DependencyMap } from './dependency.js';
+import type { PkgDep } from './pkg-dep.js';
 
 export interface ProjectInfo {
   rootPath: string;
@@ -41,4 +42,5 @@ export interface ProjectScanResult {
   secrets: Secret[];
   dependencyMap: DependencyMap;
   openApiLite: OpenApiLite;
+  pkgDeps: PkgDep[];
 }
