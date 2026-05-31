@@ -87,4 +87,26 @@ export const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
     ],
     minScore: 1,
   },
+  {
+    language: 'python',
+    framework: 'flask',
+    filePatterns: [/requirements\.txt$/, /Pipfile$/, /pyproject\.toml$/, /setup\.py$/],
+    contentPatterns: [
+      /flask/i,
+      /from flask import/,
+      /@app\.route/,
+    ],
+    minScore: 1,
+  },
+  {
+    language: 'python',
+    framework: 'django',
+    filePatterns: [/manage\.py$/, /settings\.py$/, /urls\.py$/],
+    contentPatterns: [
+      /django/i,
+      /from django/,
+      /urlpatterns/,
+    ],
+    minScore: 1,
+  },
 ];
