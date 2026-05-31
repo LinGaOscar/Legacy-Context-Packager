@@ -78,11 +78,13 @@ export function scanPkgDeps(rootDir: string): PkgDep[] {
     let content: string;
     try { content = fs.readFileSync(filePath, 'utf8'); } catch { continue; }
 
-    if (filename === 'pom.xml')            deps.push(...parsePomXml(content, filename));
-    else if (filename === 'build.gradle')  deps.push(...parseBuildGradle(content, filename));
-    else if (filename.endsWith('.csproj')) deps.push(...parseCsproj(content, filename));
-    else if (filename === 'composer.json') deps.push(...parseComposerJson(content, filename));
-    else if (filename === 'package.json')  deps.push(...parsePackageJson(content, filename));
+    // 用相對路徑當 source，讓多模組專案中相同 basename 的檔案（如多個 pom.xml）能正確區分
+    const relPath = path.relative(rootDir, filePath);
+    if (filename === 'pom.xml')            deps.push(...parsePomXml(content, relPath));
+    else if (filename === 'build.gradle')  deps.push(...parseBuildGradle(content, relPath));
+    else if (filename.endsWith('.csproj')) deps.push(...parseCsproj(content, relPath));
+    else if (filename === 'composer.json') deps.push(...parseComposerJson(content, relPath));
+    else if (filename === 'package.json')  deps.push(...parsePackageJson(content, relPath));
   }
 
   const seen = new Set<string>();
