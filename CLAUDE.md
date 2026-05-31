@@ -126,11 +126,26 @@ ProjectScanResult {
 
 > `lcp scan` 已移除，掃描與輸出統一由 TUI 控制。
 
+## 支援的專案類型
+
+**前提：需要原始碼目錄，不支援編譯後成品（.class / .dll / .jar）。**
+
+| 語言 | 框架 | 版本說明 |
+|---|---|---|
+| Java | Spring Boot | 任何版本 |
+| Java | Spring MVC | 任何版本；`@GetMapping` 等快捷 annotation 需 Spring 4.3+ |
+| Java | JAX-RS | 支援 `javax.ws.rs`（Java EE ≤8）與 `jakarta.ws.rs`（Jakarta EE ≥9）|
+| Java | WAR | 打包成品，從 `web.xml` 推斷路由，`confidence: low` |
+| C# | ASP.NET Core | .NET Core 1.0+ / .NET 5/6/7/8 |
+| C# | ASP.NET MVC | .NET Framework 4.x |
+| PHP | Laravel | 掃 `routes/web.php` 與 `routes/api.php` |
+
+其他語言（Node.js、Python、Ruby 等）與 PHP 非 Laravel 框架目前**不支援**。
+
 ## 重要限制與設計原則
 
 - **Redactor 優先**：任何輸出前必須先執行遮罩，確保 maskedValue 不含明文敏感資訊。
 - **Secret Allowlist**：在目標專案根目錄放 `.lcp-allowlist.json`（`[{ "ruleId": "...", "filePath": "..." }]`）可過濾誤報。`filePath` 為子字串比對，兩欄位均 optional 但至少需填一個。
 - **靜態分析精度上限**：動態路由、反射、custom middleware 無法靜態推斷。
-- **WAR 無 source code 時**：僅能從 `web.xml` 推斷路由，標注 `confidence: low`。
 - **openapi-lite 定位**：近似結果，不等同完整 OpenAPI spec。
 - **第一版不上 AST 深度解析**：先做規則式與框架導向掃描，JavaParser / Roslyn / PHP-Parser 為後期強化選項。
