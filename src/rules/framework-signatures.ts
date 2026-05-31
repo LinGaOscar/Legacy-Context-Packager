@@ -76,4 +76,15 @@ export const FRAMEWORK_SIGNATURES: FrameworkSignature[] = [
     ],
     minScore: 1,
   },
+  {
+    language: 'nodejs',
+    framework: 'express',
+    filePatterns: [/package\.json$/],
+    contentPatterns: [
+      /"express"\s*:/,
+      /require\(['"]express['"]\)/,
+      /from ['"]express['"]/,
+    ],
+    minScore: 1,
+  },
 ];
