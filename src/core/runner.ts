@@ -61,9 +61,11 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
     const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
+    // WAR 的 rootDir 指向 .war 檔本身，allowlist 應放在 .war 的同層目錄
+    const allowlistRoot = project.isWar ? path.dirname(project.rootDir) : project.rootDir;
     const redactedSecrets = filterAllowlisted(
       redactSecrets(normalized.secrets),
-      loadAllowlist(project.rootDir),
+      loadAllowlist(allowlistRoot),
     );
 
     const scannableFiles = collectFiles(scanRoot, {
