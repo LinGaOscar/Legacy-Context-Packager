@@ -3,6 +3,7 @@ import type { Secret } from './secret.js';
 import type { WebEntry } from './entry.js';
 import type { DependencyMap } from './dependency.js';
 import type { PkgDep } from './pkg-dep.js';
+import type { DbEntity } from './entity.js';
 
 export interface ProjectInfo {
   rootPath: string;
@@ -43,4 +44,5 @@ export interface ProjectScanResult {
   dependencyMap: DependencyMap;
   openApiLite: OpenApiLite;
   pkgDeps: PkgDep[];
+  dbEntities: DbEntity[];
 }
