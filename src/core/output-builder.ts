@@ -60,7 +60,7 @@ function buildMarkdown(r: ProjectScanResult): string {
 
   if (r.dbEntities.length > 0) {
     lines.push('\n## DB Map');
-    lines.push(buildDbMapSection(r.dbEntities));
+    lines.push(buildDbMapSection(r.dbEntities, p.rootPath));
   }
 
   lines.push('\n## Web Entries');
@@ -105,6 +105,7 @@ function buildStatsSummary(r: ProjectScanResult): string {
 
   const critCount = r.secrets.filter(s => s.severity === 'critical').length;
   lines.push(`| 疑似 Secrets | ${r.secrets.length}${critCount > 0 ? ` （critical: ${critCount}）` : ''} |`);
+  if (r.dbEntities.length > 0) lines.push(`| DB Entities | ${r.dbEntities.length} |`);
 
   if (controllers.size > 1) {
     lines.push('');
@@ -172,9 +173,7 @@ function buildApiMapSection(routes: Route[], rootPath: string): string {
   return lines.join('\n');
 }
 
-function buildDbMapSection(entities: DbEntity[]): string {
-  if (entities.length === 0) return '_No entities detected._';
-
+function buildDbMapSection(entities: DbEntity[], rootPath: string): string {
   const lines: string[] = [];
   const sorted = [...entities].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -184,7 +183,7 @@ function buildDbMapSection(entities: DbEntity[]): string {
     const tableLabel = entity.tableName ? ` → \`${entity.tableName}\`` : '';
     lines.push('');
     lines.push(`### ${entity.name}${tableLabel}`);
-    lines.push(`\`${entity.sourceFile}\``);
+    lines.push(`\`${path.relative(rootPath, entity.sourceFile)}\``);
 
     if (entity.fields.length === 0) {
       lines.push('_（未偵測到欄位定義）_');

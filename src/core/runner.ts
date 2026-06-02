@@ -66,12 +66,11 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     const pkgDeps = scanPkgDeps(project.rootDir);
     report('掃描 DB Entities...');
     const dbEntities: DbEntity[] = [];
-    const entityRoot = tempDir ?? project.rootDir;
-    if (project.language === 'java'   || project.language === 'unknown') dbEntities.push(...scanJavaEntities(entityRoot));
-    if (project.language === 'csharp' || project.language === 'unknown') dbEntities.push(...scanCSharpEntities(entityRoot));
-    if (project.language === 'php'    || project.language === 'unknown') dbEntities.push(...scanPhpEntities(entityRoot));
-    if (project.language === 'python' || project.language === 'unknown') dbEntities.push(...scanPythonEntities(entityRoot));
-    if (project.language === 'nodejs' || project.language === 'unknown') dbEntities.push(...scanNodejsEntities(entityRoot));
+    if (project.language === 'java'   || project.language === 'unknown') dbEntities.push(...scanJavaEntities(scanRoot));
+    if (project.language === 'csharp' || project.language === 'unknown') dbEntities.push(...scanCSharpEntities(scanRoot));
+    if (project.language === 'php'    || project.language === 'unknown') dbEntities.push(...scanPhpEntities(scanRoot));
+    if (project.language === 'python' || project.language === 'unknown') dbEntities.push(...scanPythonEntities(scanRoot));
+    if (project.language === 'nodejs' || project.language === 'unknown') dbEntities.push(...scanNodejsEntities(scanRoot));
     const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
     const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
