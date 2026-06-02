@@ -135,23 +135,24 @@ function buildApiMapSection(routes: Route[], rootPath: string): string {
 
   const lines: string[] = [];
 
-  // 依 className 或 sourceFile basename 分組
-  const groups = new Map<string, { sourceFile: string; routes: Route[] }>();
+  // 依 className 或 sourceFile 分組（使用完整路徑作為唯一鍵，避免 basename 碰撞）
+  const groups = new Map<string, { displayName: string; sourceFile: string; routes: Route[] }>();
   for (const route of routes) {
-    const key = route.className ?? path.basename(route.sourceFile, path.extname(route.sourceFile));
+    const key = route.className ?? route.sourceFile;
     if (!groups.has(key)) {
-      groups.set(key, { sourceFile: route.sourceFile, routes: [] });
+      const displayName = route.className ?? path.basename(route.sourceFile, path.extname(route.sourceFile));
+      groups.set(key, { displayName, sourceFile: route.sourceFile, routes: [] });
     }
     groups.get(key)!.routes.push(route);
   }
 
-  const sorted = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const sorted = [...groups.entries()].sort((a, b) => a[1].displayName.localeCompare(b[1].displayName));
   lines.push(`> 共 ${routes.length} 個端點，分佈於 ${sorted.length} 個 Controller / Handler`);
 
-  for (const [name, { sourceFile, routes: groupRoutes }] of sorted) {
-    const relPath = path.relative(rootPath, sourceFile);
+  for (const [, { displayName, sourceFile, routes: groupRoutes }] of sorted) {
+    const relPath = path.relative(rootPath || '.', sourceFile);
     lines.push('');
-    lines.push(`### ${name}`);
+    lines.push(`### ${displayName}`);
     lines.push(`\`${relPath}\``);
     lines.push('');
     lines.push('| Method | Path | Handler | Confidence |');
