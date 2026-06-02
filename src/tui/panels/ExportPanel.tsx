@@ -8,7 +8,6 @@ interface ExportOption {
   label: string;
   files: string[];
   desc: string;
-  formats: ('json' | 'markdown')[];
   report: boolean;
 }
 
@@ -17,21 +16,18 @@ const OPTIONS: ExportOption[] = [
     label: 'Context Pack (MD)',
     files: ['context-pack.md'],
     desc: '整合摘要與 LLM 提示詞，直接貼給 AI 分析系統用',
-    formats: ['markdown'],
     report: false,
   },
   {
     label: 'HTML 互動報告',
     files: ['report.html'],
     desc: '瀏覽器可直接開啟，支援搜尋、篩選與分頁瀏覽',
-    formats: [],
     report: true,
   },
   {
     label: '全部輸出',
     files: ['context-pack.md', 'report.html'],
     desc: 'MD + HTML 一次輸出至 lcp-output/',
-    formats: ['markdown'],
     report: true,
   },
 ];
@@ -57,7 +53,7 @@ export function ExportPanel({ result, active }: Props) {
     if (key.downArrow) setSelectedIdx(i => Math.min(OPTIONS.length - 1, i + 1));
     if (key.return) {
       const opt = OPTIONS[selectedIdx];
-      buildOutput(result, { outputDir: LCP_OUTPUT_DIR, formats: opt.formats, report: opt.report });
+      buildOutput(result, { outputDir: LCP_OUTPUT_DIR, report: opt.report });
       setExported(prev => new Set([...prev, selectedIdx]));
       setLastExport(LCP_OUTPUT_DIR);
     }
