@@ -7,7 +7,7 @@ export function scanPythonEntities(rootDir: string): DbEntity[] {
   const entities: DbEntity[] = [];
 
   for (const filePath of files) {
-    if (filePath.includes('site-packages') || filePath.includes('__pycache__')) continue;
+    if (filePath.includes('site-packages') || filePath.includes('__pycache__') || filePath.includes('/venv/') || filePath.includes('/.venv/')) continue;
 
     let content: string;
     try {

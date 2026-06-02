@@ -183,7 +183,7 @@ function buildDbMapSection(entities: DbEntity[], rootPath: string): string {
     const tableLabel = entity.tableName ? ` → \`${entity.tableName}\`` : '';
     lines.push('');
     lines.push(`### ${entity.name}${tableLabel}`);
-    lines.push(`\`${path.relative(rootPath, entity.sourceFile)}\``);
+    lines.push(`\`${path.relative(rootPath || '.', entity.sourceFile)}\``);
 
     if (entity.fields.length === 0) {
       lines.push('_（未偵測到欄位定義）_');
