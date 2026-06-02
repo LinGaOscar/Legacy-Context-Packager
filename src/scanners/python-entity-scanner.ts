@@ -53,9 +53,12 @@ export function scanPythonEntities(rootDir: string): DbEntity[] {
       if (inMeta) {
         const dbTableMatch = line.match(/db_table\s*=\s*['"]([^'"]+)['"]/);
         if (dbTableMatch) { tableName = dbTableMatch[1]; }
-        // Meta ends when next class-body line has ≤ 4 indent
-        if (line.match(/^    \S/) && !line.match(/^\s{8}/)) inMeta = false;
-        continue;
+        if (line.match(/^    \S/) && !line.match(/^\s{8}/)) {
+          inMeta = false;
+          // fall through to field detection below
+        } else {
+          continue;
+        }
       }
 
       // Field: 4-space indent, fieldName = models.FieldType(
