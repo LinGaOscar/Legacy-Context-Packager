@@ -87,6 +87,7 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
       dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, rawDepMap),
       openApiLite: buildOpenApiLite(normalized.routes),
       pkgDeps,
+      dbEntities: [],
     };
   } finally {
     if (tempDir) cleanupWarTemp(tempDir);
