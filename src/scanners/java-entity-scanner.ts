@@ -36,7 +36,7 @@ export function scanJavaEntities(rootDir: string): DbEntity[] {
         }
 
         if (pendingEntity) {
-          const tableMatch = trimmed.match(/@Table\s*\(\s*(?:name\s*=\s*)?["']([^"']+)["']/);
+          const tableMatch = trimmed.match(/@Table\s*\([^)]*name\s*=\s*["']([^"']+)["']/);
           if (tableMatch) { tableName = tableMatch[1]; continue; }
 
           const classMatch = trimmed.match(/(?:public\s+|protected\s+)?(?:abstract\s+)?class\s+(\w+)/);
