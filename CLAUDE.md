@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案定位
 
-**Legacy Context Packager (LCP)** 是企業遺留系統的 LLM 前處理器。在本地靜態抽取 Java / WAR / C# / PHP 專案的路由、入口、設定、敏感資訊與模組關聯，主要輸出 `context-pack.md` 直接交給 LLM 分析。核心價值：省 token、降風險、不依賴 LLM 也能先完成盤點。
+**Legacy Context Packager (LCP)** 是企業遺留系統的 LLM 前處理器。在本地靜態抽取 Java / WAR / C# / PHP / Node.js / Python 專案的路由、入口、設定、敏感資訊與模組關聯，主要輸出 `context-pack.md` 直接交給 LLM 分析。核心價值：省 token、降風險、不依賴 LLM 也能先完成盤點。
 
 ## 常用指令
 
@@ -51,23 +51,31 @@ src/
 ├─ core/
 │  ├─ runner.ts             # ★ Pipeline 總協調者
 │  ├─ paths.ts              # LCP_OUTPUT_DIR：固定輸出路徑（工具目錄/lcp-output/）
-│  ├─ project-loader.ts     # 判斷專案類型（java/csharp/php/war）與框架
+│  ├─ project-loader.ts     # 判斷專案類型（java/csharp/php/nodejs/python/war）與框架
 │  ├─ file-collector.ts     # 掃描可分析檔案清單
 │  ├─ framework-detector.ts # 偵測 Spring / Laravel / ASP.NET Core 等
 │  ├─ normalizer.ts         # 各語言 scanner 結果合併成共通格式
 │  ├─ redactor.ts           # 敏感值遮罩（先於任何輸出執行）
 │  ├─ allowlist.ts          # 讀取 .lcp-allowlist.json，過濾誤報 secret
 │  ├─ condenser.ts          # 產出 dependencyMap 與 openApiLite
-│  ├─ output-builder.ts     # 寫出 JSON / Markdown / report.html
+│  ├─ output-builder.ts     # 寫出 context-pack.md / report.html
 │  ├─ report-builder.ts     # 產生內嵌資料的靜態 HTML report
 │  └─ diff-engine.ts        # 比較兩次掃描結果
 ├─ scanners/
 │  ├─ java-route-scanner.ts   # @RequestMapping / @GetMapping / JAX-RS
 │  ├─ csharp-route-scanner.ts # [Route] / [HttpGet] / ASP.NET Core
 │  ├─ php-route-scanner.ts    # Laravel routes/web.php & routes/api.php
+│  ├─ nodejs-route-scanner.ts # Express app/router.get|post|... 動態收集 Router 變數名
+│  ├─ python-route-scanner.ts # Flask @route / Django urlpatterns
 │  ├─ war-scanner.ts          # 解壓 WAR，掃 WEB-INF/classes & web.xml
 │  ├─ web-entry-scanner.ts    # form action / fetch / axios / $.ajax
 │  ├─ secret-scanner.ts       # hardcoded token / api key / password
+│  ├─ java-entity-scanner.ts   # JPA @Entity / @Table / @Column
+│  ├─ csharp-entity-scanner.ts # EF Core [Table] / [Column]
+│  ├─ php-entity-scanner.ts    # Laravel Eloquent extends Model + $fillable
+│  ├─ python-entity-scanner.ts # Django models.Model 子類別
+│  ├─ nodejs-entity-scanner.ts # TypeORM @Entity / @Column decorator
+│  ├─ pkg-deps-scanner.ts     # pom.xml / build.gradle / .csproj / composer.json / package.json
 │  └─ dependency-scanner.ts   # 模組、檔案、route、config 關聯
 ├─ tui/                     # 所有掃描操作均透過 TUI 進行，無 CLI scan 指令
 │  ├─ App.tsx               # TUI 根元件，管理掃描狀態與畫面切換
@@ -98,8 +106,10 @@ ProjectScanResult {
   routes[],      // { language, framework, httpMethod, path, sourceFile, className, methodName, confidence }
   webEntries[],  // { entryType, pagePath, targetPath, invokeType, sourceFile, lineNumber, confidence }
   secrets[],     // { secretType, filePath, lineNumber, maskedValue, severity, confidence, ruleId }
+  pkgDeps[],     // { name, version?, source }  來自 pom.xml / package.json 等
+  dbEntities[], // { name, tableName?, fields[], sourceFile, language }
   dependencyMap,
-  openApiLite,
+  openApiLite,   // 內部使用，不再單獨輸出為檔案
 }
 ```
 
@@ -111,11 +121,6 @@ ProjectScanResult {
 |---|---|
 | `context-pack.md` | ★ 主要輸出：系統盤點摘要 + LLM 提示詞，直接貼給 AI |
 | `report.html` | 互動式報告，含搜尋篩選（瀏覽器直接開啟） |
-| `routes.json` | API path、method、handler 對應（次要，供程式讀取） |
-| `web-entry.json` | 頁面入口、form action、JS API 呼叫 |
-| `secrets-report.json` | 疑似敏感值，含遮罩與信心分數 |
-| `dependency-map.json` | 模組、route、config 依賴摘要 |
-| `openapi-lite.json` | 靜態推導的 OpenAPI 雛形（近似，非完整） |
 
 ## CLI 子命令
 
@@ -139,13 +144,17 @@ ProjectScanResult {
 | C# | ASP.NET Core | .NET Core 1.0+ / .NET 5/6/7/8 |
 | C# | ASP.NET MVC | .NET Framework 4.x |
 | PHP | Laravel | 掃 `routes/web.php` 與 `routes/api.php` |
+| Node.js | Express | 動態收集 Router 變數，支援自訂名稱（如 `const api = express.Router()`）|
+| Python | Flask | `@*.route()` decorator，支援多行 `methods=[...]` |
+| Python | Django | `urlpatterns` 中的 `path()` / `re_path()` / `url()` |
 
-其他語言（Node.js、Python、Ruby 等）與 PHP 非 Laravel 框架目前**不支援**。
+Ruby 與 PHP 非 Laravel 框架目前**不支援**。
 
 ## 重要限制與設計原則
 
 - **Redactor 優先**：任何輸出前必須先執行遮罩，確保 maskedValue 不含明文敏感資訊。
 - **Secret Allowlist**：在目標專案根目錄放 `.lcp-allowlist.json`（`[{ "ruleId": "...", "filePath": "..." }]`）可過濾誤報。`filePath` 為子字串比對，兩欄位均 optional 但至少需填一個。
 - **靜態分析精度上限**：動態路由、反射、custom middleware 無法靜態推斷。
-- **openapi-lite 定位**：近似結果，不等同完整 OpenAPI spec。
+- **openApiLite**：`ProjectScanResult` 內部欄位，僅供 `report.html` 使用，不輸出為獨立檔案，屬近似結果。
+- **DB Map 精度**：純 convention-based 的 EF 實體（無 `[Table]`/`[Column]`）無法靜態偵測；Django abstract model 與 proxy model 不在掃描範圍。
 - **第一版不上 AST 深度解析**：先做規則式與框架導向掃描，JavaParser / Roslyn / PHP-Parser 為後期強化選項。

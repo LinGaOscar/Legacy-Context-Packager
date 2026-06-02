@@ -10,6 +10,12 @@ import { scanDependencies } from '../scanners/dependency-scanner.js';
 import { scanNodejsRoutes } from '../scanners/nodejs-route-scanner.js';
 import { scanPythonRoutes } from '../scanners/python-route-scanner.js';
 import { scanPkgDeps } from '../scanners/pkg-deps-scanner.js';
+import { scanJavaEntities } from '../scanners/java-entity-scanner.js';
+import { scanCSharpEntities } from '../scanners/csharp-entity-scanner.js';
+import { scanPhpEntities } from '../scanners/php-entity-scanner.js';
+import { scanPythonEntities } from '../scanners/python-entity-scanner.js';
+import { scanNodejsEntities } from '../scanners/nodejs-entity-scanner.js';
+import type { DbEntity } from '../models/entity.js';
 import { normalize } from './normalizer.js';
 import { redactSecrets } from './redactor.js';
 import { loadAllowlist, filterAllowlisted } from './allowlist.js';
@@ -58,6 +64,14 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
     const rawSecrets = includeSecrets ? (report('掃描 Secrets...'), scanSecrets(scanRoot)) : [];
     report('掃描套件依賴...');
     const pkgDeps = scanPkgDeps(project.rootDir);
+    report('掃描 DB Entities...');
+    const dbEntities: DbEntity[] = [];
+    const entityRoot = tempDir ?? project.rootDir;
+    if (project.language === 'java'   || project.language === 'unknown') dbEntities.push(...scanJavaEntities(entityRoot));
+    if (project.language === 'csharp' || project.language === 'unknown') dbEntities.push(...scanCSharpEntities(entityRoot));
+    if (project.language === 'php'    || project.language === 'unknown') dbEntities.push(...scanPhpEntities(entityRoot));
+    if (project.language === 'python' || project.language === 'unknown') dbEntities.push(...scanPythonEntities(entityRoot));
+    if (project.language === 'nodejs' || project.language === 'unknown') dbEntities.push(...scanNodejsEntities(entityRoot));
     const { dependencyMap: rawDepMap } = scanDependencies(scanRoot);
 
     const normalized = normalize({ routes, webEntries, secrets: rawSecrets });
@@ -87,7 +101,7 @@ export async function runScan(projectPath: string, opts: ScanOptions = {}): Prom
       dependencyMap: buildDependencyMap(normalized.routes, normalized.webEntries, rawDepMap),
       openApiLite: buildOpenApiLite(normalized.routes),
       pkgDeps,
-      dbEntities: [],
+      dbEntities,
     };
   } finally {
     if (tempDir) cleanupWarTemp(tempDir);

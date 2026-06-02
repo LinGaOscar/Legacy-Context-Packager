@@ -4,6 +4,7 @@ import type { ProjectScanResult } from '../models/context-pack.js';
 import type { Route } from '../models/route.js';
 import { buildReportHtml } from './report-builder.js';
 import type { PkgDep } from '../models/pkg-dep.js';
+import type { DbEntity } from '../models/entity.js';
 
 export interface OutputOptions {
   outputDir: string;
@@ -56,6 +57,11 @@ function buildMarkdown(r: ProjectScanResult): string {
 
   lines.push('\n## API Map');
   lines.push(buildApiMapSection(r.routes, p.rootPath));
+
+  if (r.dbEntities.length > 0) {
+    lines.push('\n## DB Map');
+    lines.push(buildDbMapSection(r.dbEntities));
+  }
 
   lines.push('\n## Web Entries');
   if (r.webEntries.length === 0) {
@@ -160,6 +166,36 @@ function buildApiMapSection(routes: Route[], rootPath: string): string {
     for (const route of [...groupRoutes].sort((a, b) => a.path.localeCompare(b.path))) {
       const handler = route.methodName ?? '-';
       lines.push(`| ${route.httpMethod} | \`${route.path}\` | ${handler} | ${route.confidence} |`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function buildDbMapSection(entities: DbEntity[]): string {
+  if (entities.length === 0) return '_No entities detected._';
+
+  const lines: string[] = [];
+  const sorted = [...entities].sort((a, b) => a.name.localeCompare(b.name));
+
+  lines.push(`> 共 ${sorted.length} 個 Entity，靜態推導（JPA / EF / Eloquent / Django ORM / TypeORM），欄位對應為近似結果`);
+
+  for (const entity of sorted) {
+    const tableLabel = entity.tableName ? ` → \`${entity.tableName}\`` : '';
+    lines.push('');
+    lines.push(`### ${entity.name}${tableLabel}`);
+    lines.push(`\`${entity.sourceFile}\``);
+
+    if (entity.fields.length === 0) {
+      lines.push('_（未偵測到欄位定義）_');
+      continue;
+    }
+
+    lines.push('');
+    lines.push('| 屬性 | Column | 類型 |');
+    lines.push('|------|--------|------|');
+    for (const f of entity.fields) {
+      lines.push(`| ${f.name} | ${f.columnName ?? f.name} | ${f.type ?? '-'} |`);
     }
   }
 
