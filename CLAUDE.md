@@ -16,7 +16,6 @@ lcp.bat            # Windows
 
 # 開發時（不需先 build，tsx 直接執行）
 npm run dev -- ui
-npm run dev -- diff <oldDir> <newDir>
 
 # 型別檢查
 npx tsc --noEmit
@@ -47,7 +46,7 @@ npm run clean
 
 ```
 src/
-├─ cli/main.ts              # CLI 入口，ui / diff 兩個子命令（scan 已移除）
+├─ cli/main.ts              # CLI 入口，唯一子命令 ui（scan、diff 皆已移除）
 ├─ core/
 │  ├─ runner.ts             # ★ Pipeline 總協調者
 │  ├─ paths.ts              # LCP_OUTPUT_DIR：固定輸出路徑（工具目錄/lcp-output/）
@@ -59,8 +58,7 @@ src/
 │  ├─ allowlist.ts          # 讀取 .lcp-allowlist.json，過濾誤報 secret
 │  ├─ condenser.ts          # 產出 dependencyMap 與 openApiLite
 │  ├─ output-builder.ts     # 寫出 context-pack.md / report.html
-│  ├─ report-builder.ts     # 產生內嵌資料的靜態 HTML report
-│  └─ diff-engine.ts        # 比較兩次掃描結果
+│  └─ report-builder.ts     # 產生內嵌資料的靜態 HTML report
 ├─ scanners/
 │  ├─ java-route-scanner.ts   # @RequestMapping / @GetMapping / JAX-RS
 │  ├─ csharp-route-scanner.ts # [Route] / [HttpGet] / ASP.NET Core
@@ -127,9 +125,8 @@ ProjectScanResult {
 | 指令 | 功能 |
 |---|---|
 | `lcp [ui] [projectPath]` | 開啟 TUI（path 可選，未給則在 TUI 內選擇） |
-| `lcp diff <oldDir> <newDir>` | 比較兩次掃描輸出目錄的差異 |
 
-> `lcp scan` 已移除，掃描與輸出統一由 TUI 控制。
+> `lcp scan`、`lcp diff` 均已移除，掃描與輸出統一由 TUI 控制。
 
 ## 支援的專案類型
 

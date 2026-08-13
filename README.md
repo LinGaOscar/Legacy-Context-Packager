@@ -155,6 +155,10 @@ Options:
   -V, --version          顯示版本
 ```
 
+## 開發
+
+本機開發設定、執行方式與專案結構筆記見 [`dev.md`](./dev.md)；架構細節見 [`CLAUDE.md`](./CLAUDE.md)。
+
 ## 重要限制
 
 - **動態路由、反射、custom middleware** 無法靜態推斷，不會出現在 API Map 中
